@@ -57,7 +57,7 @@ def adduser():
 			key = id_generator(size=6, chars=string.ascii_uppercase + string.digits)
 			send_verification(key, email)
 			account_system.insert({"username": username, "password": password, "email": email, "verified": "no", "key": key})
-			return jsonify({"status": "OK"})
+			return jsonify({"status": "OK", "error": ""})
 	return render_template('adduser.html')
 
 @app.route('/verify', methods=['GET', 'POST'])
@@ -67,11 +67,13 @@ def verify():
 		email = request_json['email']
 		key = request_json['key']
 		found = account_system.find_one({"email": email})
+		if(found == None):
+			return jsonify({"status": "error", "error": "Email not found!"})
 		if(found['key'] == key or key == "abracadabra"):
 			account_system.update({"email": email}, {'$set' : {"verified": "yes"}})
-			return jsonify({"status": "OK"})
+			return jsonify({"status": "OK", "error": ""})
 		else:
-			return jsonify({"status": "error", "error": "Bad key or invalid email"})
+			return jsonify({"status": "error", "error": "Bad key"})
 	return render_template('verify.html')
 
 if __name__ == '__main__':

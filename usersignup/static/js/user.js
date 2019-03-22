@@ -18,7 +18,7 @@ function redirect(data){
 	if(data.status == "error"){
 		alert("Username or email already exists!")
 	} else {
-		window.location.href = "http://localhost:3000/verify";
+		window.location.href = "http://64.52.86.192:3000/verify";
 	}
 }
 
@@ -38,22 +38,5 @@ function verify(){
 }
 
 function redirect_login(){
-	window.location.href = "http://localhost:3891/login"
-}
-
-function login(){
-	var usrname = document.getElementById("username").value
-	var passwd = document.getElementById("password").value
-	$.ajax({
-		type: "POST",
-		url: "/login",
-		data: JSON.stringify({username: usrname, password: passwd}),
-		contentType: "application/json; charset=utf-8",
-		success: redirect_login(),
-		dataType: "json"
-	});
-}
-
-function redirect_login(){
-	window.location.href = "http://localhost:3000/adduser"
+	window.location.href = "http://64.52.86.192:3001/login"
 }
