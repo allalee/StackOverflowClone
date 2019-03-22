@@ -14,8 +14,27 @@ app.get('/adduser', function(req, res){
 })
 
 app.post('/adduser', function(req, res){
-	console.log(req.body)
-	console.log(req.body.username)
+	var mongo = require('mongodb')
+	var MongoClient = require('mongodb', {userNewUrlParser: true}).MongoClient;
+	var url = "mongodb://localhost:27017/"
+
+	MongoClient.connect(url, function (err, db) {
+		if(err) throw err
+		console.log("Entered database")
+		db = db.db("UserAccounts")
+		var usrname = req.username
+		var passwd = req.password
+		var e_mail = req.email
+
+		var collection = db.collection("accounts")
+		collection.find({username: usrname, email: e_mail}).toArray(function(err, result){
+			if (err) throw err
+			
+		})
+		//db.collection("accounts").insertOne(new_account)
+	})
+	// console.log(req.body)
+	// console.log(req.body.username)
 })
 
 // var nodemailer = require('nodemailer');
