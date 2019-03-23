@@ -1,0 +1,18 @@
+p {
+	color: red;
+	font-size: 30px;
+	text-align: center;
+}
+
+#header {
+	text-align: center;
+}
+
+.question_bar {
+	width: 600px;
+}
+
+.question_content {
+	width: 600px;
+	height: 400px;
+}
