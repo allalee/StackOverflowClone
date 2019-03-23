@@ -4,8 +4,10 @@ import datetime, string, json, pymongo, time
 
 db_connection = pymongo.MongoClient("mongodb://localhost:27017/")
 database = db_connection.UserAccounts
+views_database = db_connection.ViewCount
 account_system = database.accounts #Refer to the accounts collection in the database
 account_questions = database.account_questions #Refers to the data of the questions asked by each user
+views_db = views_database.view_tracker #Tracks views for questions
 
 app = Flask(__name__, template_folder='templates')
 app.config['TEMPLATES_AUTO_RELOAD'] = True
@@ -65,10 +67,43 @@ def add_question():
 			question["timestamp"] = int(time.time())
 			question["media"] = "" #Currently do not support media tags in the version
 			question["tags"] = request_json["tags"].split(",")
-			question["accepted_answer_id"] = "Null"
+			question["accepted_answer_id"] = None
 			account_questions.insert(question)
 			return jsonify({"status": "OK", "id": question_count, "error": ""})
 
-
+@app.route("/questions/<q_id>", methods=['GET'])
+def get_question(q_id):
+	found_question = account_questions.find_one({"id": q_id})
+	if(found_question == None):
+		return jsonify({"status": "error", "question": "", "error": "Question not found"})
+	else:
+		if(found_question["view_count"] == 0): #If the question has 0 view count then we must insert into db a new document
+			views_db.insert({"id": found_question["id"], "usernames": [], "ips": []})
+		view_tracker = views_db.find_one({"id": found_question["id"]})
+		if('username' in session): #If the user is logged in then we check for view by username
+			view_tracker_user_list = view_tracker["usernames"]
+			if not(session['username'] in view_tracker_user_list):
+				views_db.update({"id": found_question["id"]}, {'$push': {"usernames": session['username']}})
+				account_questions.update({"id": q_id}, {'$set': {"view_count": found_question["view_count"] + 1}})
+		else:	#If user is not logged in then we check for unique ip
+			ip = request.environ.get('HTTP_X_REAL_IP', request.remote_addr)
+			view_tracker_ip_list = view_tracker["ips"]
+			if not(ip in view_tracker_ip_list):
+				views_db.update({"id": q_id}, {'$push': {"ips": ip}})
+				account_questions.update({"id": q_id}, {'$set': {"view_count": found_question["view_count"] + 1}})
+		found_question = account_questions.find_one({"id": q_id})
+		question = {}
+		question["id"] = found_question["id"]
+		question["user"] = found_question["user"]
+		question["title"] = found_question["title"]
+		question["body"] = found_question["body"]
+		question["score"] = found_question["score"]
+		question["view_count"] = found_question["view_count"]
+		question["answer_count"] = found_question["answer_count"]
+		question["timestamp"] = found_question["timestamp"]
+		question["media"] = found_question["media"]
+		question["tags"] = found_question["tags"]
+		question["accepted_answer_id"] = found_question["accepted_answer_id"]
+		return jsonify({"status": "OK", "question": question, "error": ""})
 if __name__ == '__main__':
    app.run(host='0.0.0.0', port=3001)
