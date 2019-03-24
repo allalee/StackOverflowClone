@@ -7,6 +7,7 @@ database = db_connection.UserAccounts
 views_database = db_connection.ViewCount
 account_system = database.accounts #Refer to the accounts collection in the database
 account_questions = database.account_questions #Refers to the data of the questions asked by each user
+question_answers = database.question_answers
 views_db = views_database.view_tracker #Tracks views for questions
 
 app = Flask(__name__, template_folder='templates')
@@ -105,5 +106,45 @@ def get_question(q_id):
 		question["tags"] = found_question["tags"]
 		question["accepted_answer_id"] = found_question["accepted_answer_id"]
 		return jsonify({"status": "OK", "question": question, "error": ""})
+
+@app.route("/questions/<q_id>/answers/add", methods=['GET','POST'])
+def add_question_answer(q_id):
+	if(request.method == 'GET'):
+		return render_template("add_question_answer.html")
+	else:
+		if (account_questions.find_one({"id": q_id}) == None):
+			return jsonify({"status": "error", "id": "", "error": "Question does not exist!"})
+		if not('username' in session):
+			return jsonify({"status": "error", "id": "", "error": "User is not logged in!"})
+		request_json = request.get_json()
+		answer = {}
+		answer["q_id"] = q_id
+		answer["id"] = question_answers.count() + 1
+		answer["user"] = session["username"]
+		answer["body"] = request_json["body"]
+		answer["score"] = 0
+		answer["is_accepted"] = False
+		answer["timestamp"] = int(time.time())
+		answer["media"] = request_json["media"]
+		question_answers.insert(answer)
+		return jsonify({"status": "OK", "id": answer["id"], "error": ""})
+
+@app.route("/questions/<q_id>/answers", methods=['GET'])
+def get_question_answers(q_id):
+	if(account_questions.find_one({"id": q_id}) == None):
+		return jsonify({"status": "error", "answers": "", "error": "Question is not found!"})
+	else:
+		queried_answers = question_answers.find({"q_id": q_id}, {'_id': False, 'q_id': False})
+		answer_array = []
+		for answer in queried_answers:
+			answer_array.append(answer)
+		print(answer_array)
+		return jsonify({"status": "OK", "answers": answer_array, "error": ""})
+
+@app.route("/search", methods['POST'])
+def search_questions():
+	pass
+
+
 if __name__ == '__main__':
    app.run(host='0.0.0.0', port=3001)
