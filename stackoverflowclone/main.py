@@ -138,12 +138,34 @@ def get_question_answers(q_id):
 		answer_array = []
 		for answer in queried_answers:
 			answer_array.append(answer)
-		print(answer_array)
 		return jsonify({"status": "OK", "answers": answer_array, "error": ""})
 
-@app.route("/search", methods['POST'])
+@app.route("/search", methods=['GET','POST'])
 def search_questions():
-	pass
+	if(request.method == 'GET'):
+		return render_template("search_question.html")
+	else:
+		request_json = request.get_json()
+		current_timestamp = 0
+		if(request_json["timestamp"] == ""): #Optional timestamp
+			current_timestamp = int(time.time())
+		else:
+			if(int(request_json["timestamp"]) < 0):
+				return jsonify({"status": "error", "questions": "", "error": "Timestamp or limit is an invalid integer"})
+			current_timestamp = request_json["timestamp"]
+		question_limit = 0
+		if(request_json["limit"] == ""):
+			question_limit = 25 #Default is 25
+		else:
+			if(int(request_json["limit"]) < 0 or int(request_json["limit"]) > 100):
+				return jsonify({"status": "error", "questions": "", "error": "Timestamp or limit is an invalid integer"})
+			question_limit = request_json["limit"]
+		returned_questions = account_questions.find({"timestamp": {'$lte': current_timestamp}}, {"_id": False})
+		q_list = []
+		for q in returned_questions:
+			print(q)
+			q_list.append(q)	
+		return jsonify({"status": "OK", "questions": "", "error": ""})
 
 
 if __name__ == '__main__':
