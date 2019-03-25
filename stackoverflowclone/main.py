@@ -152,20 +152,19 @@ def search_questions():
 		else:
 			if(int(request_json["timestamp"]) < 0):
 				return jsonify({"status": "error", "questions": "", "error": "Timestamp or limit is an invalid integer"})
-			current_timestamp = request_json["timestamp"]
+			current_timestamp = int(request_json["timestamp"])
 		question_limit = 0
 		if(request_json["limit"] == ""):
 			question_limit = 25 #Default is 25
 		else:
 			if(int(request_json["limit"]) < 0 or int(request_json["limit"]) > 100):
 				return jsonify({"status": "error", "questions": "", "error": "Timestamp or limit is an invalid integer"})
-			question_limit = request_json["limit"]
-		returned_questions = account_questions.find({"timestamp": {'$lte': current_timestamp}}, {"_id": False})
+			question_limit = int(request_json["limit"])
+		returned_questions = account_questions.find({"timestamp": {'$lte': current_timestamp}}, {"_id": False}).sort("timestamp", -1).limit(question_limit)
 		q_list = []
 		for q in returned_questions:
-			print(q)
 			q_list.append(q)	
-		return jsonify({"status": "OK", "questions": "", "error": ""})
+		return jsonify({"status": "OK", "questions": q_list, "error": ""})
 
 
 if __name__ == '__main__':
