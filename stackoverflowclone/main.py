@@ -124,8 +124,8 @@ def add_question():
 			question = {}
 			question["id"] = question_count
 			question["user"] = {"username": session['username'], "reputation": 1} #Default reputation is set to 1 currently. Will change in the future
-			question["title"] = request_json['title']
-			question["body"] = request_json['body']
+			question["title"] = request_json["title"]
+			question["body"] = request_json["body"]
 			question["score"] = 0
 			question["view_count"] = 0
 			question["answer_count"] = 0
