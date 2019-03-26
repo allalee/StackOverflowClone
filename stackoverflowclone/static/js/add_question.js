@@ -1,7 +1,7 @@
 function submit(){
 	var q_title = document.getElementById("title").value
 	var q_body = document.getElementById("body").value
-	var q_tags = document.getElementById("tags").value
+	var q_tags = document.getElementById("tags").value.split(",")
 	$.ajax({
 		type: "POST",
 		url: "/questions/add",
