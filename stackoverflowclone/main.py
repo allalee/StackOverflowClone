@@ -39,11 +39,11 @@ def login():
 	else:
 		return render_template('login.html', logged_out=True)
 
-@app.route("/js/<path>", methods=['GET'])
+@app.route("/static/js/<path>", methods=['GET'])
 def get_static_js_files(path):
 	return send_from_directory("static/js", path)
 
-@app.route("/css/<path>", methods=['GET'])
+@app.route("/static/css/<path>", methods=['GET'])
 def get_static_css_files(path):
 	return send_from_directory("static/css", path)
 
