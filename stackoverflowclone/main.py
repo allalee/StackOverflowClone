@@ -136,7 +136,7 @@ def add_question():
 			question["view_count"] = 0
 			question["answer_count"] = 0
 			question["timestamp"] = int(time.time())
-			question["media"] = "" #Currently do not support media tags in the version
+			question["media"] = [] #Currently do not support media tags in the version
 			question["tags"] = request_json["tags"]
 			question["accepted_answer_id"] = None
 			account_questions.insert(question)
