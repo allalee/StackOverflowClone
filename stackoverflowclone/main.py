@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from flask import Flask, request, render_template, jsonify, session, make_response, redirect, url_for, abort
+from flask import Flask, request, render_template, jsonify, session, make_response, redirect, url_for, abort, send_from_directory
 import datetime, string, json, pymongo, time
 
 db_connection = pymongo.MongoClient("mongodb://localhost:27017/")
@@ -38,6 +38,10 @@ def login():
 		return render_template('login.html', logged_out=False)
 	else:
 		return render_template('login.html', logged_out=True)
+
+@app.route("/static/<path>", methods=['GET']):
+def get_static_files(path):
+	return send_from_directory("static", path)
 
 @app.route("/logout", methods=['GET', 'POST'])
 def logout():
