@@ -10,7 +10,7 @@ account_questions = database.account_questions #Refers to the data of the questi
 question_answers = database.question_answers
 views_db = views_database.view_tracker #Tracks views for questions
 
-app = Flask(__name__, template_folder='templates', static_url_path='/static')
+app = Flask(__name__, template_folder='templates', static_url_path='')
 app.config['TEMPLATES_AUTO_RELOAD'] = True
 app.secret_key = b'_5#y2L"F4Q8z\n\xec]/'
 
@@ -39,11 +39,11 @@ def login():
 	else:
 		return render_template('login.html', logged_out=True)
 
-@app.route("/js/<path>", methods=['GET'])
+@app.route("/static/js/<path>", methods=['GET'])
 def get_static_js_files(path):
 	return send_from_directory("js", path)
 
-@app.route("/css/<path>", methods=['GET'])
+@app.route("/static/css/<path>", methods=['GET'])
 def get_static_css_files(path):
 	return send_from_directory("css", path)
 
