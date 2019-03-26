@@ -1,0 +1,11 @@
+<html>
+	<link rel= "stylesheet" type= "text/css" href= "{{ url_for('static',filename='css/user.css') }}">
+	<p>Verify your account</p>
+	<div>
+		Email:<input type="text" name="email", id="email"><br>
+		Key:<input type="text" name="key" id="key"><br>
+		<button type="button" onclick="verify()">Submit</button>
+	</div>
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+	<script src="{{ url_for('static', filename='js/user.js') }}"></script>
+</html>
