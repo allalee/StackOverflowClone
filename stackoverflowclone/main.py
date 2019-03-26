@@ -119,6 +119,12 @@ def add_question():
 			return jsonify({"status": "error","id": "", "error": "User not logged in!"})
 		else:
 			request_json = request.get_json()
+			if not("title" in request_json.keys()):
+				return jsonify({"status": "error", "id": "", "error": "Title is undefined"})
+			if not("body" in request_json.keys()):
+				return jsonify({"status": "error", "id": "", "error": "Body is undefined"})
+			if not("tags" in request_json.keys()):
+				return jsonify({"status": "error", "id": "", "error": "Tags is undefined"})
 			question_count = account_questions.count() + 1 #Will be our unique ID for now...
 			question_count = str(question_count) #IDs must be a string
 			question = {}
@@ -181,6 +187,8 @@ def add_question_answer(q_id):
 		if not('username' in session):
 			return jsonify({"status": "error", "id": "", "error": "User is not logged in!"})
 		request_json = request.get_json()
+		if not("body" in request_json.keys()):
+			return jsonify({"status": "error", "id": "", "error": "Body is undefined"})
 		answer = {}
 		answer["q_id"] = q_id
 		answer["id"] = question_answers.count() + 1
@@ -210,6 +218,10 @@ def search_questions():
 		return render_template("search_question.html")
 	else:
 		request_json = request.get_json()
+		if not("timestamp" in request_json.keys()):
+			return jsonify({"status": "error", "id": "", "error": "Timestamp is undefined"})
+		if not("limit" in request_json.keys()):
+			return jsonify({"status": "error", "id": "", "error": "Limit is undefined"})
 		current_timestamp = 0
 		if(request_json["timestamp"] == ""): #Optional timestamp
 			current_timestamp = int(time.time())
