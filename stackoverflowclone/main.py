@@ -10,7 +10,7 @@ account_questions = database.account_questions #Refers to the data of the questi
 question_answers = database.question_answers
 views_db = views_database.view_tracker #Tracks views for questions
 
-app = Flask(__name__, template_folder='templates')
+app = Flask(__name__, template_folder='templates', static_url_path='')
 app.config['TEMPLATES_AUTO_RELOAD'] = True
 app.secret_key = b'_5#y2L"F4Q8z\n\xec]/'
 
