@@ -129,7 +129,7 @@ def add_question():
 			question_count = str(question_count) #IDs must be a string
 			question = {}
 			question["id"] = question_count
-			question["user"] = {"username": session['username'], "reputation": 1} #Default reputation is set to 1 currently. Will change in the future
+			question["user"] = {"username": session['username'], "reputation": 0} #Default reputation is set to 1 currently. Will change in the future
 			question["title"] = request_json["title"]
 			question["body"] = request_json["body"]
 			question["score"] = 0
@@ -189,6 +189,8 @@ def add_question_answer(q_id):
 		request_json = request.get_json()
 		if not("body" in request_json.keys()):
 			return jsonify({"status": "error", "id": "", "error": "Body is undefined"})
+		#if not("media" in request_json.keys()):
+		#	return jsonify({"status": "error", "id": "", "error": "Media is undefined"})
 		answer = {}
 		answer["q_id"] = q_id
 		answer["id"] = question_answers.count() + 1
@@ -197,7 +199,7 @@ def add_question_answer(q_id):
 		answer["score"] = 0
 		answer["is_accepted"] = False
 		answer["timestamp"] = int(time.time())
-		answer["media"] = request_json["media"]
+		#answer["media"] = request_json["media"]
 		question_answers.insert(answer)
 		return jsonify({"status": "OK", "id": answer["id"], "error": ""})
 
@@ -217,20 +219,17 @@ def search_questions():
 	if(request.method == 'GET'):
 		return render_template("search_question.html")
 	else:
+		print(request.data)
 		request_json = request.get_json()
-		if not("timestamp" in request_json.keys()):
-			return jsonify({"status": "error", "id": "", "error": "Timestamp is undefined"})
-		if not("limit" in request_json.keys()):
-			return jsonify({"status": "error", "id": "", "error": "Limit is undefined"})
 		current_timestamp = 0
-		if(request_json["timestamp"] == ""): #Optional timestamp
+		if(not("timestamp" in request_json.keys()) or request_json["timestamp"] == ""): #Optional timestamp
 			current_timestamp = int(time.time())
 		else:
 			if(int(request_json["timestamp"]) < 0):
 				return jsonify({"status": "error", "questions": "", "error": "Timestamp or limit is an invalid integer"})
 			current_timestamp = int(request_json["timestamp"])
 		question_limit = 0
-		if(request_json["limit"] == ""):
+		if(not("limit" in request_json.keys()) or request_json["limit"] == ""):
 			question_limit = 25 #Default is 25
 		else:
 			if(int(request_json["limit"]) < 0 or int(request_json["limit"]) > 100):
@@ -239,7 +238,7 @@ def search_questions():
 		returned_questions = account_questions.find({"timestamp": {'$lte': current_timestamp}}, {"_id": False}).sort("timestamp", -1).limit(question_limit)
 		q_list = []
 		for q in returned_questions:
-			q_list.append(q)	
+			q_list.append(q)
 		return jsonify({"status": "OK", "questions": q_list, "error": ""})
 
 
