@@ -1,0 +1,17 @@
+{
+  "name": "stackoverflowclone",
+  "version": "1.0.0",
+  "description": "Main project folder for stackoverflowclone",
+  "main": "main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "body-parse": "^0.1.0",
+    "express": "^4.16.4",
+    "mongodb": "^3.2.2",
+    "nodemailer": "^6.0.0"
+  }
+}
