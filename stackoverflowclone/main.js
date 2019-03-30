@@ -8,6 +8,7 @@ const mailer_js = require('./mailer.js')
 const bodyParser = require('body-parser')
 const mongo_client = require('mongodb').MongoClient
 const session = require('express-session')
+const request_ip = require('request-ip')
 
 //Specify this so that you can retrieve the post data in the request
 app.use(bodyParser.urlencoded({extended: false}))
@@ -21,6 +22,7 @@ app.use(session({
 	resave: false,
 	cookie: {maxAge: 365*24*60*60*1000}
 }))
+app.use(request_ip.mw())
 
 var soc_db
 var url = "mongodb://localhost:27017/" //Specify the url of the db that we are connecting to
@@ -137,13 +139,123 @@ app.get('/questions/add', function(err, res){
 })
 
 app.post('/questions/add', function(req, res){
+	if(req.session.username == null){
+		res.json({"status": "error", "error": "User is not logged in!"})
+		return
+	}
 	var request_body = req.body
 	var title = request_body.title
 	var body = request_body.body
 	var tags = request_body.tags
 	if(title == null){
-		
+		res.json({"status": "error", "id": "", "error": "Title is undefined"})
+		return
 	}
+	if(body == null){
+		res.json({"status": "error", "id": "", "error": "Body is undefined"})
+		return
+	}
+	if(tags == null){
+		res.json({"status": "error", "id": "", "error": "Tags is undefined"})
+		return
+	}
+	stackoverflowclone_db = soc_db.db("StackOverflowClone")
+	stackoverflowclone_db.collection("questions").count(function(err, count){
+		q_count = count + 1  //Temporary ID for questions at the moment
+		q_count = q_count.toString()
+		question_dictionary = {}
+		question_dictionary["id"] = q_count
+		question_dictionary["user"] = {"username": req.session.username, "reputation": 0}
+		question_dictionary["title"] = title
+		question_dictionary["body"] = body
+		question_dictionary["score"] = 0
+		question_dictionary["view_count"] = 0
+		question_dictionary["answer"] = 0
+		question_dictionary["timestamp"] = Math.floor(Date.now()/1000)
+		question_dictionary["media"] = []
+		question_dictionary["tags"] = tags
+		question_dictionary["accepted_answer"] = null
+		stackoverflowclone_db.collection("questions").insert(question_dictionary)
+		stackoverflowclone_db.collection("view_tracker").insert({"id": q_count, "usernames": [], "ips": []})
+		res.json({"status": "OK", "id": q_count, "error": ""})
+		return
+	})
+})
+
+app.get('/questions/:id', function(req, res){
+	stackoverflowclone_db = soc_db.db("StackOverflowClone")
+	stackoverflowclone_db.collection("questions").findOne({"id": req.params.id}, {projection: {_id: 0}}, function(err, result){
+		found_question = result
+		if(result == null){
+			res.json({"status": "error", "question": "", "error": "Question not found"})
+			return
+		} else {
+			stackoverflowclone_db.collection("view_tracker").findOne({"id": req.params.id}, function(err, result){
+				found_view_tracker = result
+				if(req.session.username != null){ //If the user is logged in then we check by username
+					view_tracker_user_list = found_view_tracker["usernames"]
+					if (!view_tracker_user_list.includes(req.session.username)){
+						stackoverflowclone_db.collection("view_tracker").updateOne({"id": req.params.id}, {"$push": {"usernames": req.session.username}}, function(err, result){
+							stackoverflowclone_db.collection("questions").updateOne({"id": req.params.id}, {"$set": {"view_count": found_question["view_count"] + 1}}, function(err, result){
+								stackoverflowclone_db.collection("questions").findOne({"id": req.params.id}, {projection: {_id: 0}}, function(err, result){
+									res.json({"status": "OK", "question": result, "error": ""})
+									return
+								})
+							})
+						})
+					} else {
+						stackoverflowclone_db.collection("questions").findOne({"id": req.params.id}, {projection: {_id: 0}}, function(err, result){
+							res.json({"status": "OK", "question": result, "error": ""})
+							return
+						})
+					}
+				} else { //If the user is not logged in then we check by ip
+					view_tracker_user_list = found_view_tracker["ips"]
+					viewer_ip = req.clientIp
+					if(!view_tracker_user_list.includes(viewer_ip)){
+						console.log("Ip not found")
+						stackoverflowclone_db.collection("view_tracker").updateOne({"id": req.params.id}, {"$push": {"ips": viewer_ip}}, function(err, result){
+							stackoverflowclone_db.collection("questions").updateOne({"id": req.params.id}, {"$set": {"view_count": found_question["view_count"] + 1}}, function(err, result){
+								stackoverflowclone_db.collection("questions").findOne({"id": req.params.id}, {projection: {_id: 0}}, function(err, result){
+									res.json({"status": "OK", "question": result, "error": ""})
+									return
+								})
+							})
+						})
+
+					} else {
+						stackoverflowclone_db.collection("questions").findOne({"id": req.params.id}, {projection: {_id: 0}}, function(err, result){
+							res.json({"status": "OK", "question": result, "error": ""})
+							return
+						})
+					}
+				}
+			})
+		}
+	})
+})
+
+app.get('/questions/:id/answers/add', function(req, res){
+	res.sendFile("/templates/add_question_answer.html", {root: __dirname})
+})
+
+app.post('/questions/:id/answers/add', function(req, res){
+	stackoverflowclone_db = soc_db.db("StackOverflowClone")
+	if(req.session.username == null){
+		res.json({"status": "error", "id": "", "error": "User is not logged in!"})
+		return
+	}
+	stackoverflowclone_db.collection("questions").findOne({"id": req.params.id}, function(err, result){
+		var request_body = req.body
+		if(result == null){
+			res.json({"status": "error", "id": "", "error": "Question does not exist!"})
+			return
+		}
+		if(request_body.body == null){
+			res.json({"status": "error", "id": "", "error": "Body is undefined!"})
+			return
+		}
+	})
 })
 
 app.listen(port, function() {
