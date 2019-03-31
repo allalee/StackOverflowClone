@@ -255,7 +255,38 @@ app.post('/questions/:id/answers/add', function(req, res){
 			res.json({"status": "error", "id": "", "error": "Body is undefined!"})
 			return
 		}
+		answer= {}
+		answer["q_id"] = req.params.id
+		stackoverflowclone_db.collection("question_answers").count(function(err, count){
+			answer["id"] = count + 1
+			answer["user"] = req.session.username
+			answer["body"] = request_body.body
+			answer["score"] = 0
+			answer["is_accepted"] = false
+			answer["timestamp"] = Math.floor(Date.now()/1000)
+			stackoverflowclone_db.collection("question_answers").insert(answer)
+			res.json({"status": "OK", "id": answer["id"], "error": ""})
+			return
+		})
 	})
+})
+
+app.get('/questions/:id/answers', function(req,res){
+	stackoverflowclone_db = soc_db.db("StackOverflowClone")
+	stackoverflowclone_db.collection("questions").findOne({"id": req.params.id}, function(err, result){
+		if(result == null){
+			res.json({"status": "error", "answers": "", "error": "Question not found!"})
+			return
+		}
+		stackoverflowclone_db.collection("question_answers").find({"q_id": req.params.id}, {projection: {_id: 0}}).toArray(function(err, result){
+			res.json({"status": "OK", "answers": result, "error": ""})
+			return
+		})
+	})
+})
+
+app.get('/search', function(req, res){
+
 })
 
 app.listen(port, function() {
