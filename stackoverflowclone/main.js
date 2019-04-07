@@ -235,6 +235,32 @@ app.get('/questions/:id', function(req, res){
 	})
 })
 
+app.delete('/questions/:id', function(req, res){
+	stackoverflowclone_db = soc_db.db("StackOverflowClone")
+	stackoverflowclone_db.collection("questions").findOne({"id": req.params.id}, function(err, result){
+		if(result == null){
+			res.status(400)
+			res.send("Question does not exist")
+			return
+		}
+		if(result["user"]["username"] != req.session.username){
+			res.status(403)
+			res.send("Forbidden delete of question not owned by user")
+			return
+		}
+		stackoverflowclone_db.collection("questions").deleteOne({"id": req.params.id}, function(err, result){
+			if(err){
+				console.log(err)
+				return
+			} else {
+				res.status(200)
+				res.send("OK")
+				return
+			}
+		})
+	})
+})
+
 app.get('/questions/:id/answers/add', function(req, res){
 	res.sendFile("/templates/add_question_answer.html", {root: __dirname})
 })
@@ -286,7 +312,43 @@ app.get('/questions/:id/answers', function(req,res){
 })
 
 app.get('/search', function(req, res){
+	res.sendFile("/templates/search_question.html", {root: __dirname})
+})
 
+app.post('/search', function(req, res){
+	var current_timestamp
+	var question_limit
+	var timestamp = req.body.timestamp
+	var limit = req.body.limit
+	if(timestamp == null || timestamp == ""){
+		current_timestamp = Math.floor(Date.now()/1000)
+	} else if(timestamp < 0){
+		res.json({"status": "error", "questions": "", "error": "Timestamp is an invalid integer!"})
+		return
+	} else {
+		current_timestamp = timestamp
+	}
+	if(limit == null || limit == ""){
+		question_limit = 25
+	} else if (limit < 0 || limit > 100){
+		res.json({"status": "error", "questions": "", "error": "Limit must be between 0 and 100"})
+		return
+	} else {
+		question_limit = parseInt(limit,10)
+	}
+	stackoverflowclone_db = soc_db.db("StackOverflowClone")
+	if(req.body.q == null){ //If the search query is not here then we can do this
+		stackoverflowclone_db.collection("questions").find({"timestamp": {'$lte': current_timestamp}}).sort({"timestamp": -1}).limit(question_limit).toArray(function(err, result){
+			res.json({"status": "OK", "question": result, "error": ""})
+			return
+		})
+	} else { //If the search query exists then we do this
+		stackoverflowclone_db.collection("questions").find({"$text":{"$search": req.body.q}, "timestamp": {'$lte': current_timestamp}}).sort({"timestamp": -1}).limit(question_limit).toArray(function(err, result){
+			console.log("Search has been done with a query")
+			res.json({"status": "OK", "question": result, "error": ""})
+			return
+		})
+	}
 })
 
 app.listen(port, function() {
