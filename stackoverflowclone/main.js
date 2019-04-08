@@ -59,7 +59,7 @@ app.post('/adduser', function(req, res){
 				} else {
 					var validation_key = mailer_js.makeid(6)
 					mailer_js.mail(email, validation_key)
-					stackoverflowclone_db.collection("user_accounts").insert({"username": username, "email": email, "password": password, "verified": "no", "key": validation_key}, function(err, result){
+					stackoverflowclone_db.collection("user_accounts").insert({"username": username, "email": email, "password": password, "reputation": 0, "verified": "no", "key": validation_key}, function(err, result){
 						console.log("Account created...")
 						res.json({"status": "OK", "error": ""})
 					});
@@ -349,6 +349,59 @@ app.post('/search', function(req, res){
 			return
 		})
 	}
+})
+
+app.get('/user/:username', function(req, res){
+	stackoverflowclone_db = soc_db.db("StackOverflowClone")
+	stackoverflowclone_db.collection("user_accounts").findOne({"username": req.params.username}, function(err, result){
+		if(result == null){
+			res.json({"status": "error", "user": ""})
+			return
+		} else {
+			res.json({"status": "OK", "user": {"email": result["email"], "reputation": result["reputation"]}})
+			return
+		}
+	})
+})
+
+app.get('/user/:username/questions', function(req, res){
+	stackoverflowclone_db = soc_db.db("StackOverflowClone")
+	stackoverflowclone_db.collection("user_accounts").findOne({"username": req.params.username}, function(err, result){
+		if(result == null){
+			res.json({"status": "error", "questions": ""})
+			return
+		} else {
+			stackoverflowclone_db.collection("questions").find({"user.username": req.params.username}).toArray(function(err, result){
+				if(result == null){
+					res.json({"status": "OK", "questions": []})
+					return
+				} else {
+					res.json({"status": "OK", "questions": result})
+					return
+				}
+			})
+		}
+	})
+})
+
+app.get('/user/:username/answers', function(req, res){
+	stackoverflowclone_db = soc_db.db("StackOverflowClone")
+	stackoverflowclone_db.collection("user_accounts").findOne({"username": req.params.username}, function(err, result){
+		if(result == null){
+			res.json({"status": "error", "answers": ""})
+			return
+		} else {
+			stackoverflowclone_db.collection("question_answers").find({"user": req.params.username}).toArray(function(err, result){
+				if(result == null){
+					res.json({"status": "OK", "answers": []})
+					return
+				} else {
+					res.json({"status": "OK", "answers": result})
+					return
+				}
+			})
+		}
+	})
 })
 
 app.listen(port, function() {
