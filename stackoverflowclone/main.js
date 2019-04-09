@@ -9,6 +9,7 @@ const bodyParser = require('body-parser')
 const mongo_client = require('mongodb').MongoClient
 const session = require('express-session')
 const request_ip = require('request-ip')
+const path = require('path')
 
 //Specify this so that you can retrieve the post data in the request
 app.use(bodyParser.urlencoded({extended: false}))
@@ -23,6 +24,9 @@ app.use(session({
 	cookie: {maxAge: 365*24*60*60*1000}
 }))
 app.use(request_ip.mw())
+//Tell the application to use ejs for html styling
+app.set('view engine', 'ejs')
+app.set('views', path.join(__dirname, '/templates'))
 
 var soc_db
 var url = "mongodb://localhost:27017/" //Specify the url of the db that we are connecting to
@@ -358,6 +362,8 @@ app.get('/user/:username', function(req, res){
 			res.json({"status": "error", "user": ""})
 			return
 		} else {
+			// var user = [{user : req.params.username, email : result["email"], reputation : result["reputation"]}]
+			// res.render("get_user")
 			res.json({"status": "OK", "user": {"email": result["email"], "reputation": result["reputation"]}})
 			return
 		}
