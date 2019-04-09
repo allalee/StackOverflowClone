@@ -23,7 +23,7 @@ function mail(receiver, validation_key){
 		from: 'artemisiacse356@gmail.com',
 		to: receiver,
 		subject: 'E-mail Verification',
-		text: validation_key
+		text: "validation key : <" + validation_key + ">"
 	}
 
 	transporter.sendMail(mailOptions, function(err, info){
