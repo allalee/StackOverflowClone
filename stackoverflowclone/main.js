@@ -341,15 +341,15 @@ app.post('/search', function(req, res){
 		question_limit = parseInt(limit,10)
 	}
 	stackoverflowclone_db = soc_db.db("StackOverflowClone")
-	if(req.body.q == null){ //If the search query is not here then we can do this
+	if(req.body.q == null || req.body.q.trim() == ""){ //If the search query is not here then we can do this
 		stackoverflowclone_db.collection("questions").find({"timestamp": {'$lte': current_timestamp}}).sort({"timestamp": -1}).limit(question_limit).toArray(function(err, result){
-			res.json({"status": "OK", "question": result, "error": ""})
+			res.json({"status": "OK", "questions": result, "error": ""})
 			return
 		})
 	} else { //If the search query exists then we do this
 		stackoverflowclone_db.collection("questions").find({"$text":{"$search": req.body.q}, "timestamp": {'$lte': current_timestamp}}).sort({"timestamp": -1}).limit(question_limit).toArray(function(err, result){
 			console.log("Search has been done with a query")
-			res.json({"status": "OK", "question": result, "error": ""})
+			res.json({"status": "OK", "questions": result, "error": ""})
 			return
 		})
 	}
