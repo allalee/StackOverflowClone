@@ -10,6 +10,9 @@ const mongo_client = require('mongodb').MongoClient
 const session = require('express-session')
 const request_ip = require('request-ip')
 const path = require('path')
+const cassandra_db = require('cassandra-driver') //npm install --save cassandra-driver: Install Cassandra DB for blob storage
+const multer = require('multer') //npm install --save multer: Install multer to handle multipart/form-data which is for uploading files
+const uuidv4 = require('uuid/v4') //npm install --save uuid: Install uuid in order to generate random ids
 
 //Specify this so that you can retrieve the post data in the request
 app.use(bodyParser.urlencoded({extended: false}))
@@ -27,6 +30,11 @@ app.use(request_ip.mw())
 //Tell the application to use ejs for html styling
 app.set('view engine', 'ejs')
 app.set('views', path.join(__dirname, '/templates'))
+//Initiate the multer variable for use later
+var upload = multer()
+//Initiate cassandraDB with options in order to use it
+var options = {contactPoints: ['127.0.0.1:9042'], keyspace: 'hw5', localDataCenter: 'datacenter1'}
+var cassandra_cluster = new cassandra_db.Client(options)
 
 var soc_db
 var url = "mongodb://localhost:27017/" //Specify the url of the db that we are connecting to
@@ -424,6 +432,45 @@ app.get('/user/:username/answers', function(req, res){
 				}
 			})
 		}
+	})
+})
+
+app.post('/addmedia', upload.single('content'), function(req, res){
+	var uploaded_content = req.file.buffer
+	var file_ext = req.file.originalname.split(".")[1] //Retrieve the file extension
+	var file_id = uuidv4()
+	var query = `INSERT INTO media (file_id, ext, content) VALUES (?, ?, ?);`
+	var params = [file_id, file_ext, uploaded_content]
+	cassandra_cluster.execute(query, params, function(err, result){
+		if(err){
+			console.log(err)
+		}
+		res.json({"status": "OK", "id": file_id, "error": ""})
+	})
+})
+
+app.get('/media/:id', function(req, res){
+	var file_id = req.params.id
+	console.log(file_id)
+	var query = `SELECT ext, content FROM media WHERE file_id=?;`
+	var params = [file_id]
+	cassandra_cluster.execute(query, params, function(err, result){
+		if(err){
+			console.log(err)
+		}
+		console.log(result.rows[0].ext)
+		console.log(result.rows[0].content)
+		header = result.rows[0].ext
+		if(header == "jpg"){
+			res.header("Content-Type", "image/jpeg")
+		}
+		if(header == "gif"){
+			res.header("Content-Type", "image/gif")
+		}
+		if(header == "png"){
+			res.header("Content-Type", "image/png")
+		}
+		res.send(result.rows[0].content)
 	})
 })
 
