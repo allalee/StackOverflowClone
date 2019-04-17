@@ -435,7 +435,46 @@ app.get('/user/:username/answers', function(req, res){
 	})
 })
 
+app.post('/questions/:id/upvote', function(req, res){
+	stackoverflowclone_db = soc_db.db("StackOverflowClone")
+	if(req.session.username == null){
+		res.json({"status": "error", "error": "User is not logged in to upvote/downvote!"})
+		return
+	}
+	stackoverflowclone_db.collection("votes")
+})
+
+app.post('/answers/:id/accept', function(req, res){ //CHANGE TO USE UUID INSTEAD OF INTEGER IDS
+	console.log(req.params.id)
+	var answer_id = parseInt(req.params.id, 10) //CHANGE THIS WHEN WE ARE USING UUID
+	stackoverflowclone_db = soc_db.db("StackOverflowClone")
+	stackoverflowclone_db.collection("question_answers").findOne({"id": answer_id}, function(err, a_result){
+		if(err) throw err;
+		if(a_result == null){
+			res.json({"status": "error", "error": "Answer was not found in database"})
+			return
+		}
+		stackoverflowclone_db.collection("questions").findOne({"id": a_result["q_id"]}, function(err, q_result){
+			if(err) throw err;
+			if(req.session.username != q_result["user"]["username"]){
+				res.json({"status": "error", "error": "User trying to accept answer is not the asker of the question!"})
+				return
+			} else {
+				//IF THE USER IS THE ASKER AND ANSWER EXISTS, set answer is_accepted boolean to true, and set question accepted_id to the answer id
+				stackoverflowclone_db.collection("questions").updateOne({"id": a_result["q_id"]},  {"$set": {"accepted_answer_id": a_result["id"]}})
+				stackoverflowclone_db.collection("question_answers").updateOne({"id": answer_id},  {"$set": {"is_accepted": true}})
+				res.json({"status": "OK", "error": ""})
+				return
+			}
+		})
+	})
+})
+
 app.post('/addmedia', upload.single('content'), function(req, res){
+	if(req.session.username == null){
+		res.json("status": "error", "id": "", "error": "User is not logged in!")
+		return
+	}
 	var uploaded_content = req.file.buffer
 	var file_ext = req.file.originalname.split(".")[1] //Retrieve the file extension
 	var file_id = uuidv4()
@@ -444,6 +483,7 @@ app.post('/addmedia', upload.single('content'), function(req, res){
 	cassandra_cluster.execute(query, params, function(err, result){
 		if(err){
 			console.log(err)
+			return
 		}
 		res.json({"status": "OK", "id": file_id, "error": ""})
 	})
