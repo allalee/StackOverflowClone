@@ -172,34 +172,36 @@ app.post('/questions/add', function(req, res){
 		return
 	}
 	stackoverflowclone_db = soc_db.db("StackOverflowClone")
-	stackoverflowclone_db.collection("questions").count(function(err, count){
-		q_count = count + 1  //Temporary ID for questions at the moment
-		q_count = q_count.toString()
-		question_dictionary = {}
-		question_dictionary["id"] = q_count
-		question_dictionary["user"] = {"username": req.session.username, "reputation": 1} //HARD CODED VALUE
-		question_dictionary["title"] = title
-		question_dictionary["body"] = body
-		question_dictionary["score"] = 0
-		question_dictionary["view_count"] = 0
-		question_dictionary["answer"] = 0
-		question_dictionary["timestamp"] = Math.floor(Date.now()/1000)
-		question_dictionary["media"] = []
-		question_dictionary["tags"] = tags
-		question_dictionary["accepted_answer"] = null
-		stackoverflowclone_db.collection("questions").insert(question_dictionary)
-		stackoverflowclone_db.collection("view_tracker").insert({"id": q_count, "usernames": [], "ips": []})
-		res.json({"status": "OK", "id": q_count, "error": ""})
-		return
-	})
+	question_dictionary = {}
+	var question_id = uuidv4()
+	question_dictionary["id"] = question_id
+	question_dictionary["username"] = req.session.username
+	question_dictionary["title"] = title
+	question_dictionary["body"] = body
+	question_dictionary["score"] = 0
+	question_dictionary["view_count"] = 0
+	question_dictionary["answer"] = 0
+	question_dictionary["timestamp"] = Math.floor(Date.now()/1000)
+	question_dictionary["media"] = []
+	question_dictionary["tags"] = tags
+	question_dictionary["accepted_answer"] = null
+	stackoverflowclone_db.collection("questions").insert(question_dictionary)
+	stackoverflowclone_db.collection("view_tracker").insert({"id": question_id, "usernames": [], "ips": []})
+	res.json({"status": "OK", "id": question_id, "error": ""})
+	return
 })
 
 app.get('/questions/:id', function(req, res){
 	console.log(req.method)
 	console.log(req.url)
 	console.log(req.body)
+	var user
 	stackoverflowclone_db = soc_db.db("StackOverflowClone")
-	stackoverflowclone_db.collection("questions").findOne({"id": req.params.id}, {projection: {_id: 0}}, function(err, result){
+	stackoverflowclone_db.collection("questions").findOne({"id": req.params.id}, {projection: {_id: 0}}, async function(err, result){
+		function retrieve_user(username){
+			return stackoverflowclone_db.collection("user_accounts").findOne({"username": username})
+		}
+		user = await Promise.all([retrieve_user(result["username"])])
 		found_question = result
 		if(result == null){
 			res.json({"status": "error", "question": "", "error": "Question not found"})
@@ -215,6 +217,7 @@ app.get('/questions/:id', function(req, res){
 						stackoverflowclone_db.collection("view_tracker").updateOne({"id": req.params.id}, {"$push": {"usernames": req.session.username}}, function(err, result){
 							stackoverflowclone_db.collection("questions").updateOne({"id": req.params.id}, {"$set": {"view_count": found_question["view_count"] + 1}}, function(err, result){
 								stackoverflowclone_db.collection("questions").findOne({"id": req.params.id}, {projection: {_id: 0}}, function(err, result){
+									result["user"] = {"username": user[0]["username"], "reputation": user[0]["reputation"]}
 									res.json({"status": "OK", "question": result, "error": ""})
 									console.log("Found new username")
 									return
@@ -223,6 +226,7 @@ app.get('/questions/:id', function(req, res){
 						})
 					} else {
 						stackoverflowclone_db.collection("questions").findOne({"id": req.params.id}, {projection: {_id: 0}}, function(err, result){
+							result["user"] = {"username": user[0]["username"], "reputation": user[0]["reputation"]}
 							res.json({"status": "OK", "question": result, "error": ""})
 							return
 						})
@@ -237,6 +241,7 @@ app.get('/questions/:id', function(req, res){
 						stackoverflowclone_db.collection("view_tracker").updateOne({"id": req.params.id}, {"$push": {"ips": viewer_ip}}, function(err, result){
 							stackoverflowclone_db.collection("questions").updateOne({"id": req.params.id}, {"$set": {"view_count": found_question["view_count"] + 1}}, function(err, result){
 								stackoverflowclone_db.collection("questions").findOne({"id": req.params.id}, {projection: {_id: 0}}, function(err, result){
+									result["user"] = {"username": user[0]["username"], "reputation": user[0]["reputation"]}
 									res.json({"status": "OK", "question": result, "error": ""})
 									return
 								})
@@ -246,6 +251,8 @@ app.get('/questions/:id', function(req, res){
 					} else {
 						console.log("IP was found")
 						stackoverflowclone_db.collection("questions").findOne({"id": req.params.id}, {projection: {_id: 0}}, function(err, result){
+							result["user"] = {"username": user[0]["username"], "reputation": user[0]["reputation"]}
+							console.log(result)
 							res.json({"status": "OK", "question": result, "error": ""})
 							return
 						})
@@ -304,17 +311,15 @@ app.post('/questions/:id/answers/add', function(req, res){
 		}
 		answer= {}
 		answer["q_id"] = req.params.id
-		stackoverflowclone_db.collection("question_answers").count(function(err, count){
-			answer["id"] = count + 1
-			answer["user"] = req.session.username
-			answer["body"] = request_body.body
-			answer["score"] = 0
-			answer["is_accepted"] = false
-			answer["timestamp"] = Math.floor(Date.now()/1000)
-			stackoverflowclone_db.collection("question_answers").insert(answer)
-			res.json({"status": "OK", "id": answer["id"].toString(), "error": ""})
-			return
-		})
+		answer["id"] = uuidv4()
+		answer["user"] = req.session.username
+		answer["body"] = request_body.body
+		answer["score"] = 0
+		answer["is_accepted"] = false
+		answer["timestamp"] = Math.floor(Date.now()/1000)
+		stackoverflowclone_db.collection("question_answers").insert(answer)
+		res.json({"status": "OK", "id": answer["id"], "error": ""})
+		return
 	})
 })
 
@@ -442,13 +447,14 @@ app.post('/questions/:id/upvote', async function(req, res){
 		return stackoverflowclone_db.collection("questions").findOne({"id": req.params.id})
 	}
 	function retrieve_votes(){
-		return stackoverflowclone_db.collection("votes").findOne({"post_id": req.params.id, "post_type": "question"})
+		return stackoverflowclone_db.collection("votes").findOne({"username": req.session.username, "post_id": req.params.id, "post_type": "question"})
 	}
 	function retrieve_user(username){
 		return stackoverflowclone_db.collection("user_accounts").findOne({"username": username})
 	}
 	var [question, vote] = await Promise.all([retrieve_question(), retrieve_votes()])
-	if(question == null){
+	stackoverflowclone_db = soc_db.db("StackOverflowClone")
+		if(question == null){
 		res.json({"status": "error", "error": "Question does not exist!"})
 		return
 	}
@@ -456,9 +462,12 @@ app.post('/questions/:id/upvote', async function(req, res){
 		upvote_option = true
 	else
 		upvote_option = req.body.upvote
-	var user = await Promise.all([retrieve_user()])
+	console.log(question)
+	console.log(question["username"])
+	var user = await Promise.all([retrieve_user(question["username"])])
+	console.log(user) //User of the asker
 	if(vote == null){ //If a vote document doesn't exist in the database
-		if(upvote){ //Add one reputation to the user
+		if(upvote_option){ //Add one reputation to the user
 			stackoverflowclone_db.collection("user_accounts").updateOne({"username": question["username"]}, {"$set": {"reputation": user["reputation"] + 1}})
 			stackoverflowclone_db.collection("votes").insert({"id": uuidv4(), "post_type": "question", "username": req.session.username, "post_id": question["id"], "status": "upvote"})
 			res.json({"status": "OK", "error": ""})
@@ -476,7 +485,7 @@ app.post('/questions/:id/upvote', async function(req, res){
 			}
 		}
 	} else { //If a vote document already exists then we check it first before making changes
-		if(upvote){
+		if(upvote_option){
 			if(vote["status"] == "none"){  //+1 rep
 				stackoverflowclone_db.collection("user_accounts").updateOne({"username": question["username"]}, {"$set": {"reputation": user["reputation"] + 1}})
 				stackoverflowclone_db.collection("votes").updateOne({"username": req.session.username, "post_type": "question", "post_id": question["id"]}, {"$set": {"status": "upvote"}})
@@ -524,16 +533,37 @@ app.post('/questions/:id/upvote', async function(req, res){
 			if(vote["status"] == "downvote") {//+1
 				stackoverflowclone_db.collection("votes").updateOne({"username": req.session.username, "post_type": "question", "post_id": question["id"]}, {"$set": {"status": "none"}})
 				stackoverflowclone_db.collection("user_accounts").updateOne({"username": question["username"]}, {"$set": {"reputation": user["reputation"] + 1}})
+				res.json({"status": "OK", "error": ""})
+				return
 			}
-			if(vote["status"] == "downvote_ignored") //0
-			if(vote["status"] == "upvote") //-2
+			if(vote["status"] == "downvote_ignored"){//0
+				stackoverflowclone_db.collection("votes").updateOne({"username": req.session.username, "post_type": "question", "post_id": question["id"]}, {"$set": {"status": "none"}})
+				res.json({"status": "OK", "error": ""})
+				return
+			}
+			if(vote["status"] == "upvote") {//-2
+				if(user["reputation"] == 2){ //If it is exactly 2, we have to ignore the downvote, but still subtract 1
+					stackoverflowclone_db.collection("votes").updateOne({"username": req.session.username, "post_type": "question", "post_id": question["id"]}, {"$set": {"status": "downvote_ignored"}})
+					stackoverflowclone_db.collection("user_accounts").updateOne({"username": question["username"]}, {"$set": {"reputation": user["reputation"] - 1}})
+					res.json({"status": "OK", "error": ""})
+					return
+				} else if(user["reputation"] <= 1){ //Only update the vote document
+					stackoverflowclone_db.collection("votes").updateOne({"username": req.session.username, "post_type": "question", "post_id": question["id"]}, {"$set": {"status": "downvote_ignored"}})
+					res.json({"status": "OK", "error": ""})
+					return
+				} else{
+					stackoverflowclone_db.collection("votes").updateOne({"username": req.session.username, "post_type": "question", "post_id": question["id"]}, {"$set": {"status": "downvote"}})
+					stackoverflowclone_db.collection("user_accounts").updateOne({"username": question["username"]}, {"$set": {"reputation": user["reputation"] - 2}})
+					res.json({"status": "OK", "error": ""})
+					return
+				}
+			}
 		}
 	}
 })
 
-app.post('/answers/:id/accept', function(req, res){ //CHANGE TO USE UUID INSTEAD OF INTEGER IDS
+app.post('/answers/:id/accept', function(req, res){
 	console.log(req.params.id)
-	var answer_id = parseInt(req.params.id, 10) //CHANGE THIS WHEN WE ARE USING UUID
 	stackoverflowclone_db = soc_db.db("StackOverflowClone")
 	stackoverflowclone_db.collection("question_answers").findOne({"id": answer_id}, function(err, a_result){
 		if(err) throw err;
