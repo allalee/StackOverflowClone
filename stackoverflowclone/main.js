@@ -478,14 +478,53 @@ app.post('/questions/:id/upvote', async function(req, res){
 	} else { //If a vote document already exists then we check it first before making changes
 		if(upvote){
 			if(vote["status"] == "none"){  //+1 rep
+				stackoverflowclone_db.collection("user_accounts").updateOne({"username": question["username"]}, {"$set": {"reputation": user["reputation"] + 1}})
+				stackoverflowclone_db.collection("votes").updateOne({"username": req.session.username, "post_type": "question", "post_id": question["id"]}, {"$set": {"status": "upvote"}})
+				res.json({"status": "OK", "error": ""})
+				return
+			}
+			if(vote["status"] == "downvote") {//+2 rep
+				stackoverflowclone_db.collection("user_accounts").updateOne({"username": question["username"]}, {"$set": {"reputation": user["reputation"] + 2}})
+				stackoverflowclone_db.collection("votes").updateOne({"username": req.session.username, "post_type": "question", "post_id": question["id"]}, {"$set": {"status": "upvote"}})
+				res.json({"status": "OK", "error": ""})
+				return
+			}
+			if(vote["status"] == "downvote_ignored"){//+1 rep 
+				stackoverflowclone_db.collection("user_accounts").updateOne({"username": question["username"]}, {"$set": {"reputation": user["reputation"] + 1}})
+				stackoverflowclone_db.collection("votes").updateOne({"username": req.session.username, "post_type": "question", "post_id": question["id"]}, {"$set": {"status": "upvote"}})
+				res.json({"status": "OK", "error": ""})
+				return
+			}
+			if(vote["status"] == "upvote") {//-1 
+				if(user["reputation"] <= 1){
+					stackoverflowclone_db.collection("votes").updateOne({"username": req.session.username, "post_type": "question", "post_id": question["id"]}, {"$set": {"status": "none"}})
+					res.json({"status": "OK", "error": ""})
+					return
+				} else {
+					stackoverflowclone_db.collection("user_accounts").updateOne({"username": question["username"]}, {"$set": {"reputation": user["reputation"] - 1}})
+					stackoverflowclone_db.collection("votes").updateOne({"username": req.session.username, "post_type": "question", "post_id": question["id"]}, {"$set": {"status": "none"}})
+					res.json({"status": "OK", "error": ""})
+					return
+				}
+			}
+		} else {
+			if(vote["status"] == "none") {//-1
+				if(user["reputation"] <= 1){
+					stackoverflowclone_db.collection("votes").updateOne({"username": req.session.username, "post_type": "question", "post_id": question["id"]}, {"$set": {"status": "downvote_ignored"}})
+					res.json({"status": "OK", "error": ""})
+					return
+				} else {
+					stackoverflowclone_db.collection("user_accounts").updateOne({"username": question["username"]}, {"$set": {"reputation": user["reputation"] - 1}})
+					stackoverflowclone_db.collection("votes").updateOne({"username": req.session.username, "post_type": "question", "post_id": question["id"]}, {"$set": {"status": "downvote"}})
+					res.json({"status": "OK", "error": ""})
+					return
+				}
 
 			}
-			if(vote["status"] == "downvote") //+2 rep
-			if(vote["status"] == "downvote_ignored")//+1 rep 
-			if(vote["status"] == "upvote") //-1 
-		} else {
-			if(vote["status"] == "none") //-1
-			if(vote["status"] == "downvote") //+1
+			if(vote["status"] == "downvote") {//+1
+				stackoverflowclone_db.collection("votes").updateOne({"username": req.session.username, "post_type": "question", "post_id": question["id"]}, {"$set": {"status": "none"}})
+				stackoverflowclone_db.collection("user_accounts").updateOne({"username": question["username"]}, {"$set": {"reputation": user["reputation"] + 1}})
+			}
 			if(vote["status"] == "downvote_ignored") //0
 			if(vote["status"] == "upvote") //-2
 		}
