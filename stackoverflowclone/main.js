@@ -434,14 +434,62 @@ app.get('/user/:username/answers', function(req, res){
 		}
 	})
 })
-
-app.post('/questions/:id/upvote', function(req, res){
+//var [post, vote] = await Promise.all([ qa.retrieve(), upvote.retrieve() ])
+app.post('/questions/:id/upvote', async function(req, res){
 	stackoverflowclone_db = soc_db.db("StackOverflowClone")
-	if(req.session.username == null){
-		res.json({"status": "error", "error": "User is not logged in to upvote/downvote!"})
+	var upvote_option
+	function retrieve_question(){
+		return stackoverflowclone_db.collection("questions").findOne({"id": req.params.id})
+	}
+	function retrieve_votes(){
+		return stackoverflowclone_db.collection("votes").findOne({"post_id": req.params.id, "post_type": "question"})
+	}
+	function retrieve_user(username){
+		return stackoverflowclone_db.collection("user_accounts").findOne({"username": username})
+	}
+	var [question, vote] = await Promise.all([retrieve_question(), retrieve_votes()])
+	if(question == null){
+		res.json({"status": "error", "error": "Question does not exist!"})
 		return
 	}
-	stackoverflowclone_db.collection("votes")
+	if(req.body.upvote == null)
+		upvote_option = true
+	else
+		upvote_option = req.body.upvote
+	var user = await Promise.all([retrieve_user()])
+	if(vote == null){ //If a vote document doesn't exist in the database
+		if(upvote){ //Add one reputation to the user
+			stackoverflowclone_db.collection("user_accounts").updateOne({"username": question["username"]}, {"$set": {"reputation": user["reputation"] + 1}})
+			stackoverflowclone_db.collection("votes").insert({"id": uuidv4(), "post_type": "question", "username": req.session.username, "post_id": question["id"], "status": "upvote"})
+			res.json({"status": "OK", "error": ""})
+			return
+		} else {
+			if(user["reputation"] <= 1){ //When user reputation is <= 1, we cannot go lower
+				stackoverflowclone_db.collection("votes").insert({"id": uuidv4(), "post_type": "question", "username": req.session.username, "post_id": question["id"], "status": "downvote_ignored"})
+				res.json({"status": "OK", "error": ""})
+				return
+			} else { //Subtract one reputation from the user
+				stackoverflowclone_db.collection("user_accounts").updateOne({"username": question["username"]}, {"$set": {"reputation": user["reputation"] - 1}})
+				stackoverflowclone_db.collection("votes").insert({"id": uuidv4(), "post_type": "question", "username": req.session.username, "post_id": question["id"], "status": "downvote"})
+				res.json({"status": "OK", "error": ""})
+				return
+			}
+		}
+	} else { //If a vote document already exists then we check it first before making changes
+		if(upvote){
+			if(vote["status"] == "none"){  //+1 rep
+
+			}
+			if(vote["status"] == "downvote") //+2 rep
+			if(vote["status"] == "downvote_ignored")//+1 rep 
+			if(vote["status"] == "upvote") //-1 
+		} else {
+			if(vote["status"] == "none") //-1
+			if(vote["status"] == "downvote") //+1
+			if(vote["status"] == "downvote_ignored") //0
+			if(vote["status"] == "upvote") //-2
+		}
+	}
 })
 
 app.post('/answers/:id/accept', function(req, res){ //CHANGE TO USE UUID INSTEAD OF INTEGER IDS
@@ -460,7 +508,6 @@ app.post('/answers/:id/accept', function(req, res){ //CHANGE TO USE UUID INSTEAD
 				res.json({"status": "error", "error": "User trying to accept answer is not the asker of the question!"})
 				return
 			} else {
-				//IF THE USER IS THE ASKER AND ANSWER EXISTS, set answer is_accepted boolean to true, and set question accepted_id to the answer id
 				stackoverflowclone_db.collection("questions").updateOne({"id": a_result["q_id"]},  {"$set": {"accepted_answer_id": a_result["id"]}})
 				stackoverflowclone_db.collection("question_answers").updateOne({"id": answer_id},  {"$set": {"is_accepted": true}})
 				res.json({"status": "OK", "error": ""})
@@ -472,7 +519,7 @@ app.post('/answers/:id/accept', function(req, res){ //CHANGE TO USE UUID INSTEAD
 
 app.post('/addmedia', upload.single('content'), function(req, res){
 	if(req.session.username == null){
-		res.json("status": "error", "id": "", "error": "User is not logged in!")
+		res.json({"status": "error", "id": "", "error": "User is not logged in!"})
 		return
 	}
 	var uploaded_content = req.file.buffer
