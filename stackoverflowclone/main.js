@@ -282,16 +282,26 @@ app.delete('/questions/:id', function(req, res){
 			res.send("Forbidden delete of question not owned by user")
 			return
 		}
-		stackoverflowclone_db.collection("questions").deleteOne({"id": req.params.id}, function(err, result){
-			if(err){
-				console.log(err)
-				return
-			} else {
-				res.status(200)
-				res.send("OK")
-				return
-			}
-		})
+
+		var query = "DELETE FROM media WHERE id IN ?;"
+		var params = result["media"]
+		if(params != []){ //skip this if there isn't any media
+			cassandra_cluster.execute(query, params)
+		}
+		stackoverflowclone_db.collection("questions").deleteMany({"q_id": req.params.id})
+		stackoverflowclone_db.collection("questions").deleteOne({"id": req.params.id})
+		res.status(200)
+		res.send("OK")
+		// stackoverflowclone_db.collection("questions").deleteOne({"id": req.params.id}, function(err, result){
+		// 	if(err){
+		// 		console.log(err)
+		// 		return
+		// 	} else {
+		// 		res.status(200)
+		// 		res.send("OK")
+		// 		return
+		// 	}
+		// })
 	})
 })
 
@@ -355,10 +365,11 @@ app.get('/search', function(req, res){
 })
 
 app.post('/search', function(req, res){
-	var current_timestamp
-	var question_limit
+	var current_timestamp, question_limit, query, sort_by, tags, has_media, accepted
 	var timestamp = req.body.timestamp
 	var limit = req.body.limit
+	//==================================================================
+	//PARSE THE OPTIONS [timestamp, limit, q, sort_by, tags, has_media, accepted]
 	if(timestamp == null || timestamp == ""){
 		current_timestamp = Math.floor(Date.now()/1000)
 	} else if(timestamp < 0){
@@ -375,19 +386,98 @@ app.post('/search', function(req, res){
 	} else {
 		question_limit = parseInt(limit,10)
 	}
-	stackoverflowclone_db = soc_db.db("StackOverflowClone")
-	if(req.body.q == null || req.body.q.trim() == ""){ //If the search query is not here then we can do this
-		stackoverflowclone_db.collection("questions").find({"timestamp": {'$lte': current_timestamp}}).sort({"timestamp": -1}).limit(question_limit).toArray(function(err, result){
-			res.json({"status": "OK", "questions": result, "error": ""})
-			return
-		})
-	} else { //If the search query exists then we do this
-		stackoverflowclone_db.collection("questions").find({"$text":{"$search": req.body.q}, "timestamp": {'$lte': current_timestamp}}).sort({"timestamp": -1}).limit(question_limit).toArray(function(err, result){
-			console.log("Search has been done with a query")
-			res.json({"status": "OK", "questions": result, "error": ""})
-			return
-		})
+	if(req.body.q == null || req.body.q.trim() == ""){
+		query = null
+	} else {
+		query = req.body.q
 	}
+	if(req.body.sort_by == null){
+		sort_by = "score"
+	} else {
+		sort_by = req.body.sort_by
+	}
+	if(req.body.tags == null){
+		tags = null	
+	} else {
+		tags = req.body.tags
+	}
+	if(req.body.has_media == null){
+		has_media = false
+	} else {
+		has_media = req.body.has_media
+	}
+	if(req.body.accepted == null){
+		accepted = false
+	} else {
+		accepted = req.body.accepted
+	}
+	//timestamp, limit, sort_by, has_media, and accepted have default values
+	stackoverflowclone_db = soc_db.db("StackOverflowClone")
+	if(query == null && tags == null){
+		if(has_media){
+			stackoverflowclone_db.collection("questions").find({"timestamp": {'$lte': current_timestamp}, "accepted": accepted, "media": {'$ne': []}}).sort({sort_by: -1}).limit(question_limit).toArray(function(err, result){
+				res.json({"status": "OK", "questions": result, "error": ""})
+				return
+			})
+		} else {
+			stackoverflowclone_db.collection("questions").find({"timestamp": {'$lte': current_timestamp}, "accepted": accepted}).sort({sort_by: -1}).limit(question_limit).toArray(function(err, result){
+				res.json({"status": "OK", "questions": result, "error": ""})
+				return
+			})
+		}
+	} else if (query == null && tags != null){
+		if(has_media){
+			stackoverflowclone_db.collection("questions").find({"timestamp": {'$lte': current_timestamp}, "accepted": accepted, "media": {'$ne': []}, "tags": {"$all": tags}}).sort({sort_by: -1}).limit(question_limit).toArray(function(err, result){
+				res.json({"status": "OK", "questions": result, "error": ""})
+				return
+			})
+		} else {
+			stackoverflowclone_db.collection("questions").find({"timestamp": {'$lte': current_timestamp}, "accepted": accepted, "tags": {"$all": tags}}).sort({sort_by: -1}).limit(question_limit).toArray(function(err, result){
+				res.json({"status": "OK", "questions": result, "error": ""})
+				return
+			})
+		}
+
+	} else if (query != null && tags == null){
+		if(has_media){
+			stackoverflowclone_db.collection("questions").find({"$text": {"$search": query}, "timestamp": {'$lte': current_timestamp}, "accepted": accepted, "media": {'$ne': []}}).sort({sort_by: -1}).limit(question_limit).toArray(function(err, result){
+				res.json({"status": "OK", "questions": result, "error": ""})
+				return
+			})
+		} else {
+			stackoverflowclone_db.collection("questions").find({"$text": {"$search": query}, "timestamp": {'$lte': current_timestamp}, "accepted": accepted}).sort({sort_by: -1}).limit(question_limit).toArray(function(err, result){
+				res.json({"status": "OK", "questions": result, "error": ""})
+				return
+			})
+		}
+	} else {
+		if(has_media){
+			stackoverflowclone_db.collection("questions").find({"$text": {"$search": query}, "timestamp": {'$lte': current_timestamp}, "accepted": accepted, "media": {'$ne': []}, "tags": {"$all": tags}}).sort({sort_by: -1}).limit(question_limit).toArray(function(err, result){
+				res.json({"status": "OK", "questions": result, "error": ""})
+				return
+			})
+		} else {
+			stackoverflowclone_db.collection("questions").find({"$text": {"$search": query}, "timestamp": {'$lte': current_timestamp}, "accepted": accepted, "tags": {"$all": tags}}).sort({sort_by: -1}).limit(question_limit).toArray(function(err, result){
+				res.json({"status": "OK", "questions": result, "error": ""})
+				return
+			})
+		}
+	}
+
+	// //===================================================================
+	// stackoverflowclone_db = soc_db.db("StackOverflowClone")
+	// if(req.body.q == null || req.body.q.trim() == ""){ //If the search query is not here then we can do this
+	// 	stackoverflowclone_db.collection("questions").find({"timestamp": {'$lte': current_timestamp}}).sort({"timestamp": -1}).limit(question_limit).toArray(function(err, result){
+	// 		res.json({"status": "OK", "questions": result, "error": ""})
+	// 		return
+	// 	})
+	// } else { //If the search query exists then we do this
+	// 	stackoverflowclone_db.collection("questions").find({"$text":{"$search": req.body.q}, "timestamp": {'$lte': current_timestamp}}).sort({"timestamp": -1}).limit(question_limit).toArray(function(err, result){
+	// 		console.log("Search has been done with a query")
+	// 		res.json({"status": "OK", "questions": result, "error": ""})
+	// 		return
+	// 	})
+	// }
 })
 
 app.get('/user/:username', function(req, res){
@@ -482,11 +572,13 @@ app.post('/questions/:id/upvote', async function(req, res){
 	console.log(user) //User of the asker
 	if(vote == null){ //If a vote document doesn't exist in the database
 		if(upvote_option){ //Add one reputation to the user
+			stackoverflowclone_db.collection("questions").updateOne({"id": req.params.id}, {"$set": {"score": question["score"] + 1}})
 			stackoverflowclone_db.collection("user_accounts").updateOne({"username": question["username"]}, {"$set": {"reputation": user["reputation"] + 1}})
 			stackoverflowclone_db.collection("votes").insert({"id": uuidv4(), "post_type": "question", "username": req.session.username, "post_id": question["id"], "status": "upvote"})
 			res.json({"status": "OK", "error": ""})
 			return
 		} else {
+			stackoverflowclone_db.collection("questions").updateOne({"id": req.params.id}, {"$set": {"score": question["score"] - 1}})
 			if(user["reputation"] <= 1){ //When user reputation is <= 1, we cannot go lower
 				stackoverflowclone_db.collection("votes").insert({"id": uuidv4(), "post_type": "question", "username": req.session.username, "post_id": question["id"], "status": "downvote_ignored"})
 				res.json({"status": "OK", "error": ""})
@@ -501,24 +593,28 @@ app.post('/questions/:id/upvote', async function(req, res){
 	} else { //If a vote document already exists then we check it first before making changes
 		if(upvote_option){
 			if(vote["status"] == "none"){  //+1 rep
+				stackoverflowclone_db.collection("questions").updateOne({"id": req.params.id}, {"$set": {"score": question["score"] + 1}})
 				stackoverflowclone_db.collection("user_accounts").updateOne({"username": question["username"]}, {"$set": {"reputation": user["reputation"] + 1}})
 				stackoverflowclone_db.collection("votes").updateOne({"username": req.session.username, "post_type": "question", "post_id": question["id"]}, {"$set": {"status": "upvote"}})
 				res.json({"status": "OK", "error": ""})
 				return
 			}
 			if(vote["status"] == "downvote") {//+2 rep
+				stackoverflowclone_db.collection("questions").updateOne({"id": req.params.id}, {"$set": {"score": question["score"] + 2}})
 				stackoverflowclone_db.collection("user_accounts").updateOne({"username": question["username"]}, {"$set": {"reputation": user["reputation"] + 2}})
 				stackoverflowclone_db.collection("votes").updateOne({"username": req.session.username, "post_type": "question", "post_id": question["id"]}, {"$set": {"status": "upvote"}})
 				res.json({"status": "OK", "error": ""})
 				return
 			}
 			if(vote["status"] == "downvote_ignored"){//+1 rep 
+				stackoverflowclone_db.collection("questions").updateOne({"id": req.params.id}, {"$set": {"score": question["score"] + 2}})
 				stackoverflowclone_db.collection("user_accounts").updateOne({"username": question["username"]}, {"$set": {"reputation": user["reputation"] + 1}})
 				stackoverflowclone_db.collection("votes").updateOne({"username": req.session.username, "post_type": "question", "post_id": question["id"]}, {"$set": {"status": "upvote"}})
 				res.json({"status": "OK", "error": ""})
 				return
 			}
 			if(vote["status"] == "upvote") {//-1 
+				stackoverflowclone_db.collection("questions").updateOne({"id": req.params.id}, {"$set": {"score": question["score"] - 1}})
 				if(user["reputation"] <= 1){
 					stackoverflowclone_db.collection("votes").updateOne({"username": req.session.username, "post_type": "question", "post_id": question["id"]}, {"$set": {"status": "none"}})
 					res.json({"status": "OK", "error": ""})
@@ -532,6 +628,7 @@ app.post('/questions/:id/upvote', async function(req, res){
 			}
 		} else {
 			if(vote["status"] == "none") {//-1
+				stackoverflowclone_db.collection("questions").updateOne({"id": req.params.id}, {"$set": {"score": question["score"] - 1}})
 				if(user["reputation"] <= 1){
 					stackoverflowclone_db.collection("votes").updateOne({"username": req.session.username, "post_type": "question", "post_id": question["id"]}, {"$set": {"status": "downvote_ignored"}})
 					res.json({"status": "OK", "error": ""})
@@ -545,17 +642,20 @@ app.post('/questions/:id/upvote', async function(req, res){
 
 			}
 			if(vote["status"] == "downvote") {//+1
+				stackoverflowclone_db.collection("questions").updateOne({"id": req.params.id}, {"$set": {"score": question["score"] + 1}})
 				stackoverflowclone_db.collection("votes").updateOne({"username": req.session.username, "post_type": "question", "post_id": question["id"]}, {"$set": {"status": "none"}})
 				stackoverflowclone_db.collection("user_accounts").updateOne({"username": question["username"]}, {"$set": {"reputation": user["reputation"] + 1}})
 				res.json({"status": "OK", "error": ""})
 				return
 			}
 			if(vote["status"] == "downvote_ignored"){//0
+				stackoverflowclone_db.collection("questions").updateOne({"id": req.params.id}, {"$set": {"score": question["score"] + 1}})
 				stackoverflowclone_db.collection("votes").updateOne({"username": req.session.username, "post_type": "question", "post_id": question["id"]}, {"$set": {"status": "none"}})
 				res.json({"status": "OK", "error": ""})
 				return
 			}
 			if(vote["status"] == "upvote") {//-2
+				stackoverflowclone_db.collection("questions").updateOne({"id": req.params.id}, {"$set": {"score": question["score"] - 2}})
 				if(user["reputation"] == 2){ //If it is exactly 2, we have to ignore the downvote, but still subtract 1
 					stackoverflowclone_db.collection("votes").updateOne({"username": req.session.username, "post_type": "question", "post_id": question["id"]}, {"$set": {"status": "downvote_ignored"}})
 					stackoverflowclone_db.collection("user_accounts").updateOne({"username": question["username"]}, {"$set": {"reputation": user["reputation"] - 1}})
@@ -604,11 +704,13 @@ app.post('/answers/:id/upvote', async function(req, res){
 	console.log(user) //User of the asker
 	if(vote == null){ //If a vote document doesn't exist in the database
 		if(upvote_option){ //Add one reputation to the user
+			stackoverflowclone_db.collection("question_answers").updateOne({"id": req.params.id}, {"$set": {"score": answer["score"] + 1}})
 			stackoverflowclone_db.collection("user_accounts").updateOne({"username": answer["user"]}, {"$set": {"reputation": user["reputation"] + 1}})
 			stackoverflowclone_db.collection("votes").insert({"id": uuidv4(), "post_type": "answer", "username": req.session.username, "post_id": answer["id"], "status": "upvote"})
 			res.json({"status": "OK", "error": ""})
 			return
 		} else {
+			stackoverflowclone_db.collection("question_answers").updateOne({"id": req.params.id}, {"$set": {"score": answer["score"] - 1}})
 			if(user["reputation"] <= 1){ //When user reputation is <= 1, we cannot go lower
 				stackoverflowclone_db.collection("votes").insert({"id": uuidv4(), "post_type": "answer", "username": req.session.username, "post_id": answer["id"], "status": "downvote_ignored"})
 				res.json({"status": "OK", "error": ""})
@@ -623,24 +725,28 @@ app.post('/answers/:id/upvote', async function(req, res){
 	} else { //If a vote document already exists then we check it first before making changes
 		if(upvote_option){
 			if(vote["status"] == "none"){  //+1 rep
+				stackoverflowclone_db.collection("question_answers").updateOne({"id": req.params.id}, {"$set": {"score": answer["score"] + 1}})
 				stackoverflowclone_db.collection("user_accounts").updateOne({"username": answer["user"]}, {"$set": {"reputation": user["reputation"] + 1}})
 				stackoverflowclone_db.collection("votes").updateOne({"username": req.session.username, "post_type": "answer", "post_id": answer["id"]}, {"$set": {"status": "upvote"}})
 				res.json({"status": "OK", "error": ""})
 				return
 			}
 			if(vote["status"] == "downvote") {//+2 rep
+				stackoverflowclone_db.collection("question_answers").updateOne({"id": req.params.id}, {"$set": {"score": answer["score"] + 2}})
 				stackoverflowclone_db.collection("user_accounts").updateOne({"username": answer["user"]}, {"$set": {"reputation": user["reputation"] + 2}})
 				stackoverflowclone_db.collection("votes").updateOne({"username": req.session.username, "post_type": "answer", "post_id": answer["id"]}, {"$set": {"status": "upvote"}})
 				res.json({"status": "OK", "error": ""})
 				return
 			}
 			if(vote["status"] == "downvote_ignored"){//+1 rep 
+				stackoverflowclone_db.collection("question_answers").updateOne({"id": req.params.id}, {"$set": {"score": answer["score"] + 2}})
 				stackoverflowclone_db.collection("user_accounts").updateOne({"username": answer["user"]}, {"$set": {"reputation": user["reputation"] + 1}})
 				stackoverflowclone_db.collection("votes").updateOne({"username": req.session.username, "post_type": "answer", "post_id": answer["id"]}, {"$set": {"status": "upvote"}})
 				res.json({"status": "OK", "error": ""})
 				return
 			}
 			if(vote["status"] == "upvote") {//-1 
+				stackoverflowclone_db.collection("question_answers").updateOne({"id": req.params.id}, {"$set": {"score": answer["score"] - 1}})
 				if(user["reputation"] <= 1){
 					stackoverflowclone_db.collection("votes").updateOne({"username": req.session.username, "post_type": "answer", "post_id": answer["id"]}, {"$set": {"status": "none"}})
 					res.json({"status": "OK", "error": ""})
@@ -654,6 +760,7 @@ app.post('/answers/:id/upvote', async function(req, res){
 			}
 		} else {
 			if(vote["status"] == "none") {//-1
+				stackoverflowclone_db.collection("question_answers").updateOne({"id": req.params.id}, {"$set": {"score": answer["score"] - 1}})
 				if(user["reputation"] <= 1){
 					stackoverflowclone_db.collection("votes").updateOne({"username": req.session.username, "post_type": "answer", "post_id": answer["id"]}, {"$set": {"status": "downvote_ignored"}})
 					res.json({"status": "OK", "error": ""})
@@ -667,17 +774,20 @@ app.post('/answers/:id/upvote', async function(req, res){
 
 			}
 			if(vote["status"] == "downvote") {//+1
+				stackoverflowclone_db.collection("question_answers").updateOne({"id": req.params.id}, {"$set": {"score": answer["score"] + 1}})
 				stackoverflowclone_db.collection("votes").updateOne({"username": req.session.username, "post_type": "answer", "post_id": answer["id"]}, {"$set": {"status": "none"}})
 				stackoverflowclone_db.collection("user_accounts").updateOne({"username": answer["user"]}, {"$set": {"reputation": user["reputation"] + 1}})
 				res.json({"status": "OK", "error": ""})
 				return
 			}
 			if(vote["status"] == "downvote_ignored"){//0
+				stackoverflowclone_db.collection("question_answers").updateOne({"id": req.params.id}, {"$set": {"score": answer["score"] + 1}})
 				stackoverflowclone_db.collection("votes").updateOne({"username": req.session.username, "post_type": "answer", "post_id": answer["id"]}, {"$set": {"status": "none"}})
 				res.json({"status": "OK", "error": ""})
 				return
 			}
 			if(vote["status"] == "upvote") {//-2
+				stackoverflowclone_db.collection("question_answers").updateOne({"id": req.params.id}, {"$set": {"score": answer["score"] - 2}})
 				if(user["reputation"] == 2){ //If it is exactly 2, we have to ignore the downvote, but still subtract 1
 					stackoverflowclone_db.collection("votes").updateOne({"username": req.session.username, "post_type": "answer", "post_id": answer["id"]}, {"$set": {"status": "downvote_ignored"}})
 					stackoverflowclone_db.collection("user_accounts").updateOne({"username": answer["user"]}, {"$set": {"reputation": user["reputation"] - 1}})
