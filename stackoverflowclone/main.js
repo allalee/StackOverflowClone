@@ -15,7 +15,16 @@ const multer = require('multer') //npm install --save multer: Install multer to 
 const uuidv4 = require('uuid/v4') //npm install --save uuid: Install uuid in order to generate random ids
 const redis = require('redis') //npm install --save redis: Install redis for caching and session saving
 const redisStore = require('connect-redis')(session)
+const nodemailer = require("nodemailer")
 
+//Create a nodemailer object
+let transporter = nodemailer.createTransport({
+	service: 'gmail-send',
+	auth: {
+		user: 'artemisiacse356@gmail.com',
+		pass: 'cse356verify'
+	}
+});
 //Specify this so that you can retrieve the post data in the request
 app.use(bodyParser.urlencoded({extended: false}))
 app.use(bodyParser.json());
@@ -83,7 +92,7 @@ app.post('/adduser', function(req, res){
 					return
 				} else {
 					var validation_key = mailer_js.makeid(6)
-					mailer_js.mail(email, validation_key)
+					mailer_js.mail(email, validation_key, transporter)
 					stackoverflowclone_db.collection("user_accounts").insert({"username": username, "email": email, "password": password, "reputation": 1, "verified": "no", "key": validation_key}, function(err, result){
 						console.log("Account created...")
 						res.json({"status": "OK", "error": ""})

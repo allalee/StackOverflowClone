@@ -1,5 +1,3 @@
-const nodemailer = require("nodemailer")
-
 function makeid(length) {
   var text = "";
   var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -10,14 +8,14 @@ function makeid(length) {
   return text;
 }
 
-function mail(receiver, validation_key){
-	let transporter = nodemailer.createTransport({
-		service: 'gmail',
-		auth: {
-			user: 'artemisiacse356@gmail.com',
-			pass: 'cse356verify'
-		}
-	});
+function mail(receiver, validation_key, transporter){
+	// let transporter = nodemailer.createTransport({
+	// 	service: 'gmail',
+	// 	auth: {
+	// 		user: 'artemisiacse356@gmail.com',
+	// 		pass: 'cse356verify'
+	// 	}
+	// });
 
 	let mailOptions = {
 		from: 'artemisiacse356@gmail.com',
