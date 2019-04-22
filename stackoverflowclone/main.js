@@ -95,7 +95,6 @@ app.post('/adduser', function(req, res){
 					var validation_key = mailer_js.makeid(6)
 					console.log("It's trying to send mail")
 					mailer_js.mail(email, validation_key)
-					console.log("doesn't make it past this")
 					stackoverflowclone_db.collection("user_accounts").insert({"username": username, "email": email, "password": password, "reputation": 1, "verified": "no", "key": validation_key}, function(err, result){
 						if(err) throw err;
 						console.log("Account created...")

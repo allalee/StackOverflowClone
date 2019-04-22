@@ -22,7 +22,7 @@ function mail(receiver, validation_key){
 		// pass: "cse356verify",
 		to: receiver,
 		subject: "E-mail Verification",
-		text: "validation_key : <" + validation_key + ">"
+		text: "validation key: <" + validation_key + ">"
 	})
 
 	// let mailOptions = {
