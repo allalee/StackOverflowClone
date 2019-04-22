@@ -42,14 +42,15 @@ app.set('views', path.join(__dirname, '/templates'))
 //Initiate the multer variable for use later
 var upload = multer()
 //Initiate cassandraDB with options in order to use it
-var options = {contactPoints: ['127.0.0.1:9042'], keyspace: 'hw5', localDataCenter: 'datacenter1'}
+var options = {contactPoints: ['64.190.90.111:9042'], keyspace: 'hw5', localDataCenter: 'datacenter1'}
 var cassandra_cluster = new cassandra_db.Client(options)
 redis_client.get("test", function(err, val){
 	console.log(val)
 })
 
 var soc_db
-var url = "mongodb://localhost:27017/" //Specify the url of the db that we are connecting to
+var url = "mongodb://cse356admin:cse356mongodb@64.190.91.15:27017/admin" //Specify the url of the db that we are connecting to
+//"mongodb://localhost:27017/"
 mongo_client.connect(url, function(err, db){
 	if(err) throw err
 	console.log("Connected to MongoDB")
