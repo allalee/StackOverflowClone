@@ -17,6 +17,7 @@
     "express-session": "^1.15.6",
     "mongodb": "^3.2.2",
     "multer": "^1.4.1",
+    "n": "^3.0.2",
     "nodemailer": "^6.0.0",
     "redis": "^2.8.0",
     "request-ip": "^2.1.3",
