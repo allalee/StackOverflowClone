@@ -18,13 +18,14 @@ const redisStore = require('connect-redis')(session)
 const nodemailer = require("nodemailer")
 
 //Create a nodemailer object
-let transporter = nodemailer.createTransport({
-	service: 'gmail-send',
-	auth: {
-		user: 'artemisiacse356@gmail.com',
-		pass: 'cse356verify'
-	}
-});
+// let transporter = nodemailer.createTransport({
+// 	service: 'gmail-send',
+// 	auth: {
+// 		user: 'artemisiacse356@gmail.com',
+// 		pass: 'cse356verify'
+// 	}
+// });
+
 //Specify this so that you can retrieve the post data in the request
 app.use(bodyParser.urlencoded({extended: false}))
 app.use(bodyParser.json());
@@ -92,8 +93,11 @@ app.post('/adduser', function(req, res){
 					return
 				} else {
 					var validation_key = mailer_js.makeid(6)
-					mailer_js.mail(email, validation_key, transporter)
+					console.log("It's trying to send mail")
+					mailer_js.mail(email, validation_key)
+					console.log("doesn't make it past this")
 					stackoverflowclone_db.collection("user_accounts").insert({"username": username, "email": email, "password": password, "reputation": 1, "verified": "no", "key": validation_key}, function(err, result){
+						if(err) throw err;
 						console.log("Account created...")
 						res.json({"status": "OK", "error": ""})
 					});

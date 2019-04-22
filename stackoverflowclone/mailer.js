@@ -1,3 +1,4 @@
+const send = require('gmail-send')({user: "artemisiacse356@gmail.com", pass: "cse356verify"})
 function makeid(length) {
   var text = "";
   var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -8,7 +9,7 @@ function makeid(length) {
   return text;
 }
 
-function mail(receiver, validation_key, transporter){
+function mail(receiver, validation_key){
 	// let transporter = nodemailer.createTransport({
 	// 	service: 'gmail',
 	// 	auth: {
@@ -16,19 +17,26 @@ function mail(receiver, validation_key, transporter){
 	// 		pass: 'cse356verify'
 	// 	}
 	// });
-
-	let mailOptions = {
-		from: 'artemisiacse356@gmail.com',
+	send({
+		// user: "artemisiacse356@gmail.com",
+		// pass: "cse356verify",
 		to: receiver,
-		subject: 'E-mail Verification',
-		text: "validation key : <" + validation_key + ">"
-	}
-
-	transporter.sendMail(mailOptions, function(err, info){
-		if(err) {
-			console.log(err)
-		}
+		subject: "E-mail Verification",
+		text: "validation_key : <" + validation_key + ">"
 	})
+
+	// let mailOptions = {
+	// 	from: 'artemisiacse356@gmail.com',
+	// 	to: receiver,
+	// 	subject: 'E-mail Verification',
+	// 	text: "validation key : <" + validation_key + ">"
+	// }
+
+	// transporter.sendMail(mailOptions, function(err, info){
+	// 	if(err) {
+	// 		console.log(err)
+	// 	}
+	// })
 }
 
 module.exports = {
