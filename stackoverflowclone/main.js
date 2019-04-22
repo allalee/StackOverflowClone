@@ -13,18 +13,27 @@ const path = require('path')
 const cassandra_db = require('cassandra-driver') //npm install --save cassandra-driver: Install Cassandra DB for blob storage
 const multer = require('multer') //npm install --save multer: Install multer to handle multipart/form-data which is for uploading files
 const uuidv4 = require('uuid/v4') //npm install --save uuid: Install uuid in order to generate random ids
+const redis = require('redis') //npm install --save redis: Install redis for caching and session saving
+const redisStore = require('connect-redis')(session)
 
 //Specify this so that you can retrieve the post data in the request
 app.use(bodyParser.urlencoded({extended: false}))
 app.use(bodyParser.json());
 //Specify the place where Express will look for static files to serve(CSS and JS)
 app.use(express.static(__dirname + "/static"))
+//Initiate the redis caching client
+var redis_client = redis.createClient({
+	port: 6379,
+	host: '64.52.162.255',
+	password: "pJoWYJXxK2xJWptedPkx+q7cRdxpGyKRQld6W0+CUzjyBJKT2xrFeFoVC/xOnNQUz7dritTBe6ph34sw"
+})
 //Create a session for the app to use
 app.use(session({
 	secret: 'main_secret',
 	saveUninitialized: false,
 	resave: false,
-	cookie: {maxAge: 365*24*60*60*1000}
+	cookie: {maxAge: 365*24*60*60*1000},
+	store: new redisStore({host: "64.52.162.255", port: 6379, client: redis_client})
 }))
 app.use(request_ip.mw())
 //Tell the application to use ejs for html styling
@@ -35,6 +44,9 @@ var upload = multer()
 //Initiate cassandraDB with options in order to use it
 var options = {contactPoints: ['127.0.0.1:9042'], keyspace: 'hw5', localDataCenter: 'datacenter1'}
 var cassandra_cluster = new cassandra_db.Client(options)
+redis_client.get("test", function(err, val){
+	console.log(val)
+})
 
 var soc_db
 var url = "mongodb://localhost:27017/" //Specify the url of the db that we are connecting to
