@@ -106,6 +106,7 @@ app.post('/verify', function(req, res){
 
 	stackoverflowclone_db.collection("user_accounts").findOne({"email": email}, function(err, result){
 		if(result == null){
+			res.status(400)
 			res.json({"status": "error", "error": "Email not found!"})
 			return
 		} else if(key == result["key"] || key == "abracadabra") {
@@ -135,12 +136,14 @@ app.post('/login', function(req, res){
 
 	stackoverflowclone_db.collection("user_accounts").findOne({"username": username}, function(err, result){
 		if(result == null){
-			res.json({"status": "error", "error": "Username not found!"})
+			res.status(400).send({"status": "error", "error": "Username not found!"})
 			return
 		} else if(result["verified"] != "yes"){
+			res.status(400)
 			res.json({"status": "error", "error": "User is not verified!"})
 			return
 		} else if (result["password"] != password){
+			res.status(400)
 			res.json({"status": "error", "error": "Invalid password for user!"})
 			return
 		}
@@ -152,7 +155,7 @@ app.post('/login', function(req, res){
 
 app.post('/logout', function(req, res){
 	if(req.session.username == null){
-		res.json({"status": "error", "error": "User is not logged in!"})
+		res.status(400).send({"status": "error", "error": "User is not logged in!"})
 	} else {
 		req.session.destroy()
 		res.json({"status": "OK", "error": ""})
@@ -165,7 +168,7 @@ app.get('/questions/add', function(err, res){
 
 app.post('/questions/add', function(req, res){
 	if(req.session.username == null){
-		res.json({"status": "error", "error": "User is not logged in!"})
+		res.status(400).send({"status": "error", "error": "User is not logged in!"})
 		return
 	}
 	var request_body = req.body
@@ -174,15 +177,15 @@ app.post('/questions/add', function(req, res){
 	var tags = request_body.tags
 	var media
 	if(title == null){
-		res.json({"status": "error", "id": "", "error": "Title is undefined"})
+		res.status(400).send({"status": "error", "id": "", "error": "Title is undefined"})
 		return
 	}
 	if(body == null){
-		res.json({"status": "error", "id": "", "error": "Body is undefined"})
+		res.status(400).send({"status": "error", "id": "", "error": "Body is undefined"})
 		return
 	}
 	if(tags == null){
-		res.json({"status": "error", "id": "", "error": "Tags is undefined"})
+		res.status(400).send({"status": "error", "id": "", "error": "Tags is undefined"})
 		return
 	}
 	if(req.body.media == null){ //Media is an optional tag and can be null
@@ -223,7 +226,7 @@ app.get('/questions/:id', function(req, res){
 		user = await Promise.all([retrieve_user(result["username"])])
 		found_question = result
 		if(result == null){
-			res.json({"status": "error", "question": "", "error": "Question not found"})
+			res.status(400).send({"status": "error", "question": "", "error": "Question not found"})
 			return
 		} else {
 			stackoverflowclone_db.collection("view_tracker").findOne({"id": req.params.id}, function(err, result){
@@ -325,18 +328,18 @@ app.get('/questions/:id/answers/add', function(req, res){
 app.post('/questions/:id/answers/add', function(req, res){
 	stackoverflowclone_db = soc_db.db("StackOverflowClone")
 	if(req.session.username == null){
-		res.json({"status": "error", "id": "", "error": "User is not logged in!"})
+		res.status(400).send({"status": "error", "id": "", "error": "User is not logged in!"})
 		return
 	}
 	stackoverflowclone_db.collection("questions").findOne({"id": req.params.id}, function(err, result){
 		var request_body = req.body
 		var media
 		if(result == null){
-			res.json({"status": "error", "id": "", "error": "Question does not exist!"})
+			res.status(400).send({"status": "error", "id": "", "error": "Question does not exist!"})
 			return
 		}
 		if(request_body.body == null){
-			res.json({"status": "error", "id": "", "error": "Body is undefined!"})
+			res.status(400).send({"status": "error", "id": "", "error": "Body is undefined!"})
 			return
 		}
 		if(request_body.media == null){ //Media is an optional value which defaults to []
@@ -363,7 +366,7 @@ app.get('/questions/:id/answers', function(req,res){
 	stackoverflowclone_db = soc_db.db("StackOverflowClone")
 	stackoverflowclone_db.collection("questions").findOne({"id": req.params.id}, function(err, result){
 		if(result == null){
-			res.json({"status": "error", "answers": "", "error": "Question not found!"})
+			res.status(400).send({"status": "error", "answers": "", "error": "Question not found!"})
 			return
 		}
 		stackoverflowclone_db.collection("question_answers").find({"q_id": req.params.id}, {projection: {_id: 0}}).toArray(function(err, result){
@@ -386,7 +389,7 @@ app.post('/search', function(req, res){
 	if(timestamp == null || timestamp == ""){
 		current_timestamp = Math.floor(Date.now()/1000)
 	} else if(timestamp < 0){
-		res.json({"status": "error", "questions": "", "error": "Timestamp is an invalid integer!"})
+		res.status(400).send({"status": "error", "questions": "", "error": "Timestamp is an invalid integer!"})
 		return
 	} else {
 		current_timestamp = timestamp
@@ -394,7 +397,7 @@ app.post('/search', function(req, res){
 	if(limit == null || limit == ""){
 		question_limit = 25
 	} else if (limit < 0 || limit > 100){
-		res.json({"status": "error", "questions": "", "error": "Limit must be between 0 and 100"})
+		res.status(400).send({"status": "error", "questions": "", "error": "Limit must be between 0 and 100"})
 		return
 	} else {
 		question_limit = parseInt(limit,10)
@@ -497,7 +500,7 @@ app.get('/user/:username', function(req, res){
 	stackoverflowclone_db = soc_db.db("StackOverflowClone")
 	stackoverflowclone_db.collection("user_accounts").findOne({"username": req.params.username}, function(err, result){
 		if(result == null){
-			res.json({"status": "error", "user": ""})
+			res.status(400).send({"status": "error", "user": ""})
 			return
 		} else {
 			// var user = [{user : req.params.username, email : result["email"], reputation : result["reputation"]}]
@@ -512,7 +515,7 @@ app.get('/user/:username/questions', function(req, res){
 	stackoverflowclone_db = soc_db.db("StackOverflowClone")
 	stackoverflowclone_db.collection("user_accounts").findOne({"username": req.params.username}, function(err, result){
 		if(result == null){
-			res.json({"status": "error", "questions": ""})
+			res.status(400).send({"status": "error", "questions": ""})
 			return
 		} else {
 			stackoverflowclone_db.collection("questions").find({"user.username": req.params.username}, {projection: {_id: 0, id: 1}}).toArray(function(err, result){
@@ -536,7 +539,7 @@ app.get('/user/:username/answers', function(req, res){
 	stackoverflowclone_db = soc_db.db("StackOverflowClone")
 	stackoverflowclone_db.collection("user_accounts").findOne({"username": req.params.username}, function(err, result){
 		if(result == null){
-			res.json({"status": "error", "answers": ""})
+			res.status(400).send({"status": "error", "answers": ""})
 			return
 		} else {
 			stackoverflowclone_db.collection("question_answers").find({"user": req.params.username}, {projection: {_id: 0, id: 1}}).toArray(function(err, result){
@@ -570,8 +573,8 @@ app.post('/questions/:id/upvote', async function(req, res){
 	}
 	var [question, vote] = await Promise.all([retrieve_question(), retrieve_votes()])
 	stackoverflowclone_db = soc_db.db("StackOverflowClone")
-		if(question == null){
-		res.json({"status": "error", "error": "Question does not exist!"})
+	if(question == null){
+		res.status(400).send({"status": "error", "error": "Question does not exist!"})
 		return
 	}
 	if(req.body.upvote == null)
@@ -703,8 +706,8 @@ app.post('/answers/:id/upvote', async function(req, res){
 	}
 	var [answer, vote] = await Promise.all([retrieve_answer(), retrieve_votes()])
 	stackoverflowclone_db = soc_db.db("StackOverflowClone")
-		if(answer == null){
-		res.json({"status": "error", "error": "Answer does not exist!"})
+	if(answer == null){
+		res.status(400).send({"status": "error", "error": "Answer does not exist!"})
 		return
 	}
 	if(req.body.upvote == null)
@@ -827,13 +830,13 @@ app.post('/answers/:id/accept', function(req, res){
 	stackoverflowclone_db.collection("question_answers").findOne({"id": req.params.id}, function(err, a_result){
 		if(err) throw err;
 		if(a_result == null){
-			res.json({"status": "error", "error": "Answer was not found in database"})
+			res.status(400).send({"status": "error", "error": "Answer was not found in database"})
 			return
 		}
 		stackoverflowclone_db.collection("questions").findOne({"id": a_result["q_id"]}, function(err, q_result){
 			if(err) throw err;
 			if(req.session.username != q_result["username"]){
-				res.json({"status": "error", "error": "User trying to accept answer is not the asker of the question!"})
+				res.status(400).send({"status": "error", "error": "User trying to accept answer is not the asker of the question!"})
 				return
 			} else {
 				stackoverflowclone_db.collection("questions").updateOne({"id": a_result["q_id"]},  {"$set": {"accepted_answer_id": a_result["id"]}})
@@ -847,7 +850,7 @@ app.post('/answers/:id/accept', function(req, res){
 
 app.post('/addmedia', upload.single('content'), function(req, res){
 	if(req.session.username == null){
-		res.json({"status": "error", "id": "", "error": "User is not logged in!"})
+		res.status(400).send({"status": "error", "id": "", "error": "User is not logged in!"})
 		return
 	}
 	var uploaded_content = req.file.buffer
