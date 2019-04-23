@@ -1,12 +1,25 @@
 const send = require('gmail-send')({user: "artemisiacse356@gmail.com", pass: "cse356verify"})
 const nodemailer = require('nodemailer')
-const transporter = nodemailer.createTransport({
-	service: 'Gmail',
-	auth: {
-		user: "artemisiacse356@gmail.com",
-		pass: "cse356verify"
-	}
+var transporter
+nodemailer.createTestAccount(function(err, account){
+	transporter = nodemailer.createTransport({
+		host: account.smtp.host,
+		port: account.smtp.port,
+		secure: account.smtp.secure,
+		auth: {
+			user: account.user,
+			pass: account.pass
+		}
+	})
 })
+
+// const transporter = nodemailer.createTransport({
+// 	service: 'Gmail',
+// 	auth: {
+// 		user: "artemisiacse356@gmail.com",
+// 		pass: "cse356verify"
+// 	}
+// })
 
 function makeid(length) {
   var text = "";
