@@ -212,7 +212,8 @@ app.post('/questions/add', function(req, res){
 	question_dictionary["timestamp"] = Math.floor(Date.now()/1000)
 	question_dictionary["media"] = media
 	question_dictionary["tags"] = tags
-	question_dictionary["accepted_answer"] = null
+	question_dictionary["accepted_answer_id"] = null
+	question_dictionary["answer_count"] = 0
 	stackoverflowclone_db.collection("questions").insert(question_dictionary)
 	stackoverflowclone_db.collection("view_tracker").insert({"id": question_id, "usernames": [], "ips": []})
 	res.json({"status": "OK", "id": question_id, "error": ""})
@@ -319,20 +320,10 @@ app.delete('/questions/:id', function(req, res){
 		if(params != []){ //skip this if there isn't any media
 			cassandra_cluster.execute(query, params)
 		}
-		stackoverflowclone_db.collection("questions").deleteMany({"q_id": req.params.id})
+		stackoverflowclone_db.collection("question_answers").deleteMany({"q_id": req.params.id})
 		stackoverflowclone_db.collection("questions").deleteOne({"id": req.params.id})
 		res.status(200)
 		res.send("OK")
-		// stackoverflowclone_db.collection("questions").deleteOne({"id": req.params.id}, function(err, result){
-		// 	if(err){
-		// 		console.log(err)
-		// 		return
-		// 	} else {
-		// 		res.status(200)
-		// 		res.send("OK")
-		// 		return
-		// 	}
-		// })
 	})
 })
 
@@ -468,7 +459,8 @@ app.get('/user/:username/questions', function(req, res){
 			res.status(400).json({"status": "error", "questions": ""})
 			return
 		} else {
-			stackoverflowclone_db.collection("questions").find({"user.username": req.params.username}, {projection: {_id: 0, id: 1}}).toArray(function(err, result){
+			stackoverflowclone_db.collection("questions").find({"username": req.params.username}, {projection: {_id: 0, id: 1}}).toArray(function(err, result){
+				console.log(result)
 				if(result == null){
 					res.json({"status": "OK", "questions": []})
 					return
