@@ -397,7 +397,7 @@ app.get('/search', function(req, res){
 })
 
 app.post('/search', function(req, res){
-	var current_timestamp, question_limit, query, sort_by, tags, has_media, accepted
+	var current_timestamp, question_limit, sort_by
 	var timestamp = req.body.timestamp
 	var limit = req.body.limit
 	//==================================================================
@@ -418,98 +418,32 @@ app.post('/search', function(req, res){
 	} else {
 		question_limit = parseInt(limit,10)
 	}
-	if(req.body.q == null || req.body.q.trim() == ""){
-		query = null
-	} else {
-		query = req.body.q
+	var question_query = {}
+	question_query["timestamp"] = {'$lte': current_timestamp}
+	if(req.body.q != null && req.body.q.trim() != ""){
+		question_query["$text"] = {"$search": req.body.q}
 	}
 	if(req.body.sort_by == null){
 		sort_by = "score"
 	} else {
 		sort_by = req.body.sort_by
 	}
-	if(req.body.tags == null){
-		tags = null	
-	} else {
-		tags = req.body.tags
+	if(req.body.tags != null){
+		question_query["tags"] = {"$all": req.body.tags}
 	}
-	if(req.body.has_media == null){
-		has_media = false
-	} else {
-		has_media = req.body.has_media
+	if(req.body.has_media != null && req.body.has_media == true){
+		question_query["media"] = {"$ne": []}
 	}
-	if(req.body.accepted == null){
-		accepted = false
-	} else {
-		accepted = req.body.accepted
+	if(req.body.accepted != null && req.body.accepted == true){
+		question_query["accepted_answer_id"] = {"$ne": null}
 	}
 	//timestamp, limit, sort_by, has_media, and accepted have default values
 	stackoverflowclone_db = soc_db.db("StackOverflowClone")
-	if(query == null && tags == null){
-		if(has_media){
-			stackoverflowclone_db.collection("questions").find({"timestamp": {'$lte': current_timestamp}, "accepted": accepted, "media": {'$ne': []}}).sort({sort_by: -1}).limit(question_limit).toArray(function(err, result){
-				res.json({"status": "OK", "questions": result, "error": ""})
-				return
-			})
-		} else {
-			stackoverflowclone_db.collection("questions").find({"timestamp": {'$lte': current_timestamp}, "accepted": accepted}).sort({sort_by: -1}).limit(question_limit).toArray(function(err, result){
-				res.json({"status": "OK", "questions": result, "error": ""})
-				return
-			})
-		}
-	} else if (query == null && tags != null){
-		if(has_media){
-			stackoverflowclone_db.collection("questions").find({"timestamp": {'$lte': current_timestamp}, "accepted": accepted, "media": {'$ne': []}, "tags": {"$all": tags}}).sort({sort_by: -1}).limit(question_limit).toArray(function(err, result){
-				res.json({"status": "OK", "questions": result, "error": ""})
-				return
-			})
-		} else {
-			stackoverflowclone_db.collection("questions").find({"timestamp": {'$lte': current_timestamp}, "accepted": accepted, "tags": {"$all": tags}}).sort({sort_by: -1}).limit(question_limit).toArray(function(err, result){
-				res.json({"status": "OK", "questions": result, "error": ""})
-				return
-			})
-		}
-
-	} else if (query != null && tags == null){
-		if(has_media){
-			stackoverflowclone_db.collection("questions").find({"$text": {"$search": query}, "timestamp": {'$lte': current_timestamp}, "accepted": accepted, "media": {'$ne': []}}).sort({sort_by: -1}).limit(question_limit).toArray(function(err, result){
-				res.json({"status": "OK", "questions": result, "error": ""})
-				return
-			})
-		} else {
-			stackoverflowclone_db.collection("questions").find({"$text": {"$search": query}, "timestamp": {'$lte': current_timestamp}, "accepted": accepted}).sort({sort_by: -1}).limit(question_limit).toArray(function(err, result){
-				res.json({"status": "OK", "questions": result, "error": ""})
-				return
-			})
-		}
-	} else {
-		if(has_media){
-			stackoverflowclone_db.collection("questions").find({"$text": {"$search": query}, "timestamp": {'$lte': current_timestamp}, "accepted": accepted, "media": {'$ne': []}, "tags": {"$all": tags}}).sort({sort_by: -1}).limit(question_limit).toArray(function(err, result){
-				res.json({"status": "OK", "questions": result, "error": ""})
-				return
-			})
-		} else {
-			stackoverflowclone_db.collection("questions").find({"$text": {"$search": query}, "timestamp": {'$lte': current_timestamp}, "accepted": accepted, "tags": {"$all": tags}}).sort({sort_by: -1}).limit(question_limit).toArray(function(err, result){
-				res.json({"status": "OK", "questions": result, "error": ""})
-				return
-			})
-		}
-	}
-
-	// //===================================================================
-	// stackoverflowclone_db = soc_db.db("StackOverflowClone")
-	// if(req.body.q == null || req.body.q.trim() == ""){ //If the search query is not here then we can do this
-	// 	stackoverflowclone_db.collection("questions").find({"timestamp": {'$lte': current_timestamp}}).sort({"timestamp": -1}).limit(question_limit).toArray(function(err, result){
-	// 		res.json({"status": "OK", "questions": result, "error": ""})
-	// 		return
-	// 	})
-	// } else { //If the search query exists then we do this
-	// 	stackoverflowclone_db.collection("questions").find({"$text":{"$search": req.body.q}, "timestamp": {'$lte': current_timestamp}}).sort({"timestamp": -1}).limit(question_limit).toArray(function(err, result){
-	// 		console.log("Search has been done with a query")
-	// 		res.json({"status": "OK", "questions": result, "error": ""})
-	// 		return
-	// 	})
-	// }
+	stackoverflowclone_db.collection("questions").find(question_query).sort({sort_by: -1}).limit(question_limit).toArray(function(err, result){
+		if(err) console.log(err)
+		res.json({"status": "OK", "questions": result, "error": ""})
+		return
+	})
 })
 
 app.get('/user/:username', function(req, res){
