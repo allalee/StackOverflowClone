@@ -17,15 +17,6 @@ const redis = require('redis') //npm install --save redis: Install redis for cac
 const redisStore = require('connect-redis')(session)
 const nodemailer = require("nodemailer")
 
-//Create a nodemailer object
-// let transporter = nodemailer.createTransport({
-// 	service: 'gmail-send',
-// 	auth: {
-// 		user: 'artemisiacse356@gmail.com',
-// 		pass: 'cse356verify'
-// 	}
-// });
-
 //Specify this so that you can retrieve the post data in the request
 app.use(bodyParser.urlencoded({extended: false}))
 app.use(bodyParser.json());
@@ -84,11 +75,13 @@ app.post('/adduser', function(req, res){
 
 	stackoverflowclone_db.collection("user_accounts").findOne({"username": username}, function(err, result){
 		if(result != null){ //If there is already an entry in the db with that username
+			res.status(400)
 			res.json({"status": "error", "error": "Username already exists!"})
 			return
 		} else {
 			stackoverflowclone_db.collection("user_accounts").findOne({"email": email}, function(err, result){
 				if(result != null){
+					res.status(400)
 					res.json({"status": "error", "error": "Email already exists!"})
 					return
 				} else {
@@ -126,6 +119,7 @@ app.post('/verify', function(req, res){
 			res.json({"status": "OK", "error": ""})
 			return
 		} else {
+			res.status(400)
 			res.json({"status": "error", "error": "Invalid key for user!"})
 			return
 		}
@@ -235,12 +229,13 @@ app.get('/questions/:id', function(req, res){
 		function retrieve_user(username){
 			return stackoverflowclone_db.collection("user_accounts").findOne({"username": username})
 		}
-		user = await Promise.all([retrieve_user(result["username"])])
 		found_question = result
+		console.log(result) 
 		if(result == null){
 			res.status(400).json({"status": "error", "question": "", "error": "Question not found"})
 			return
 		} else {
+			user = await Promise.all([retrieve_user(result["username"])])
 			stackoverflowclone_db.collection("view_tracker").findOne({"id": req.params.id}, function(err, result){
 				found_view_tracker = result
 				if(req.session.username != null){ //If the user is logged in then we check by username
@@ -249,8 +244,11 @@ app.get('/questions/:id', function(req, res){
 					view_tracker_user_list = found_view_tracker["usernames"]
 					if (!view_tracker_user_list.includes(req.session.username)){
 						stackoverflowclone_db.collection("view_tracker").updateOne({"id": req.params.id}, {"$push": {"usernames": req.session.username}}, function(err, result){
+							if(err) console.log(err)
 							stackoverflowclone_db.collection("questions").updateOne({"id": req.params.id}, {"$set": {"view_count": found_question["view_count"] + 1}}, function(err, result){
+								if(err) console.log(err)
 								stackoverflowclone_db.collection("questions").findOne({"id": req.params.id}, {projection: {_id: 0}}, function(err, result){
+									if (err) console.log(err)
 									result["user"] = {"username": user[0]["username"], "reputation": user[0]["reputation"]}
 									res.json({"status": "OK", "question": result, "error": ""})
 									console.log("Found new username")
@@ -260,6 +258,7 @@ app.get('/questions/:id', function(req, res){
 						})
 					} else {
 						stackoverflowclone_db.collection("questions").findOne({"id": req.params.id}, {projection: {_id: 0}}, function(err, result){
+							if(err) console.log(err)
 							result["user"] = {"username": user[0]["username"], "reputation": user[0]["reputation"]}
 							res.json({"status": "OK", "question": result, "error": ""})
 							return
@@ -273,8 +272,11 @@ app.get('/questions/:id', function(req, res){
 					if(!view_tracker_user_list.includes(viewer_ip)){
 						console.log("Ip not found")
 						stackoverflowclone_db.collection("view_tracker").updateOne({"id": req.params.id}, {"$push": {"ips": viewer_ip}}, function(err, result){
+							if(err) console.log(err)
 							stackoverflowclone_db.collection("questions").updateOne({"id": req.params.id}, {"$set": {"view_count": found_question["view_count"] + 1}}, function(err, result){
+								if(err) console.log(err)
 								stackoverflowclone_db.collection("questions").findOne({"id": req.params.id}, {projection: {_id: 0}}, function(err, result){
+									if(err) console.log(err)
 									result["user"] = {"username": user[0]["username"], "reputation": user[0]["reputation"]}
 									res.json({"status": "OK", "question": result, "error": ""})
 									return
@@ -285,6 +287,7 @@ app.get('/questions/:id', function(req, res){
 					} else {
 						console.log("IP was found")
 						stackoverflowclone_db.collection("questions").findOne({"id": req.params.id}, {projection: {_id: 0}}, function(err, result){
+							if(err) console.log(err)
 							result["user"] = {"username": user[0]["username"], "reputation": user[0]["reputation"]}
 							console.log(result)
 							res.json({"status": "OK", "question": result, "error": ""})
@@ -368,6 +371,7 @@ app.post('/questions/:id/answers/add', function(req, res){
 		answer["is_accepted"] = false
 		answer["timestamp"] = Math.floor(Date.now()/1000)
 		answer["media"] = media
+		stackoverflowclone_db.collection("questions").updateOne({"id": req.params.id}, {"$set": {"answer_count": result["answer_count"] + 1}})
 		stackoverflowclone_db.collection("question_answers").insert(answer)
 		res.json({"status": "OK", "id": answer["id"], "error": ""})
 		return
