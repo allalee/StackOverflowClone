@@ -315,10 +315,10 @@ app.delete('/questions/:id', function(req, res){
 			return
 		}
 
-		var query = "DELETE FROM media WHERE id IN ?;"
+		var query = "DELETE FROM media WHERE file_id IN ?;"
 		var params = result["media"]
 		if(params != []){ //skip this if there isn't any media
-			cassandra_cluster.execute(query, params)
+			cassandra_cluster.execute(query, [params])
 		}
 		stackoverflowclone_db.collection("question_answers").deleteMany({"q_id": req.params.id})
 		stackoverflowclone_db.collection("questions").deleteOne({"id": req.params.id})
@@ -817,6 +817,10 @@ app.get('/media/:id', function(req, res){
 	cassandra_cluster.execute(query, params, function(err, result){
 		if(err){
 			console.log(err)
+		}
+		if(result == null){
+			res.status(400)
+			res.json({"status": "error", "error": "Image not found"})
 		}
 		console.log(result.rows[0].ext)
 		console.log(result.rows[0].content)
