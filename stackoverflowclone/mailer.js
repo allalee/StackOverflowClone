@@ -2,9 +2,10 @@ const send = require('gmail-send')({user: "artemisiacse356@gmail.com", pass: "cs
 const nodemailer = require('nodemailer')
 var transporter = nodemailer.createTransport({
 	service: 'gmail',
+	pool: true,
 	secure: false,
 	auth: {
-		user: "artemisiacse356@gmail.com",
+		user: "artemisiacse356.2@gmail.com",
 		pass: "cse356verify"
 	}
 })
