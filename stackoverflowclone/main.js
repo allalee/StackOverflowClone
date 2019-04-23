@@ -18,8 +18,8 @@ const redisStore = require('connect-redis')(session)
 const nodemailer = require("nodemailer")
 
 //Specify this so that you can retrieve the post data in the request
-app.use(bodyParser.urlencoded({extended: false}))
-app.use(bodyParser.json());
+app.use(bodyParser.json({limit: '50mb'}))
+app.use(bodyParser.urlencoded({limit: '50mb', extended: true}))
 //Specify the place where Express will look for static files to serve(CSS and JS)
 app.use(express.static(__dirname + "/static"))
 //Initiate the redis caching client
