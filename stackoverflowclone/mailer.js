@@ -1,16 +1,12 @@
 const send = require('gmail-send')({user: "artemisiacse356@gmail.com", pass: "cse356verify"})
 const nodemailer = require('nodemailer')
-var transporter
-nodemailer.createTestAccount(function(err, account){
-	transporter = nodemailer.createTransport({
-		host: account.smtp.host,
-		port: account.smtp.port,
-		secure: account.smtp.secure,
-		auth: {
-			user: account.user,
-			pass: account.pass
-		}
-	})
+var transporter = nodemailer.createTransport({
+	service: 'gmail',
+	secure: false,
+	auth: {
+		user: "artemisiacse356@gmail.com",
+		pass: "cse356verify"
+	}
 })
 
 // const transporter = nodemailer.createTransport({
@@ -47,19 +43,29 @@ function mail(receiver, validation_key){
 	// 	text: "validation key: <" + validation_key + ">"
 	// })
 	// console.log("Mail has been sent")
-
+	// nodemailer.createTestAccount(function(err, account){
+	// 	let transporter = nodemailer.createTransport({
+	// 		host: account.smtp.host,
+	// 		port: account.smtp.port,
+	// 		secure: account.smtp.secure,
+	// 		auth: {
+	// 			user: account.user,
+	// 			pass: account.pass
+	// 		}
+	// 	})
 	let mailOptions = {
 		from: 'artemisiacse356@gmail.com',
 		to: receiver,
 		subject: 'E-mail Verification',
 		text: "validation key : <" + validation_key + ">"
 	}
-
 	transporter.sendMail(mailOptions, function(err, info){
 		if(err) {
 			console.log(err)
 		}
+		console.log(info)
 	})
+	// })
 }
 
 module.exports = {
