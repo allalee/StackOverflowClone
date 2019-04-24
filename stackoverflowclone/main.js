@@ -214,7 +214,7 @@ app.post('/questions/add', async function(req, res){
 	question_dictionary["tags"] = tags
 	question_dictionary["accepted_answer_id"] = null
 	question_dictionary["answer_count"] = 0
-	if(media == null){
+	if(media == null || media.length == 0){
 		stackoverflowclone_db.collection("questions").insert(question_dictionary)
 		stackoverflowclone_db.collection("view_tracker").insert({"id": question_id, "usernames": [], "ips": []})
 		res.json({"status": "OK", "id": question_id, "error": ""})
