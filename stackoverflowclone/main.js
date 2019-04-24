@@ -860,7 +860,7 @@ app.get('/media/:id', function(req, res){
 			console.log(err)
 		}
 		console.log(result)
-		if(result == null){
+		if(result.length = 0){
 			res.status(400)
 			res.json({"status": "error", "error": "Image not found"})
 		}
