@@ -377,6 +377,7 @@ app.get('/questions/:id/answers/add', function(req, res){
 })
 
 app.post('/questions/:id/answers/add', async function(req, res){
+	console.log(req.body)
 	stackoverflowclone_db = soc_db.db("StackOverflowClone")
 	if(req.session.username == null){
 		res.status(400).json({"status": "error", "id": "", "error": "User is not logged in!"})
@@ -454,6 +455,7 @@ app.post('/questions/:id/answers/add', async function(req, res){
 })
 
 app.get('/questions/:id/answers', function(req,res){
+	console.log(req.body)
 	stackoverflowclone_db = soc_db.db("StackOverflowClone")
 	stackoverflowclone_db.collection("questions").findOne({"id": req.params.id}, function(err, result){
 		if(result == null){
@@ -472,6 +474,7 @@ app.get('/search', function(req, res){
 })
 
 app.post('/search', function(req, res){
+	console.log(req.body)
 	var current_timestamp, question_limit, sort_by
 	var timestamp = req.body.timestamp
 	var limit = req.body.limit
@@ -522,6 +525,7 @@ app.post('/search', function(req, res){
 })
 
 app.get('/user/:username', function(req, res){
+	console.log(req.body)
 	stackoverflowclone_db = soc_db.db("StackOverflowClone")
 	stackoverflowclone_db.collection("user_accounts").findOne({"username": req.params.username}, function(err, result){
 		if(result == null){
@@ -537,6 +541,7 @@ app.get('/user/:username', function(req, res){
 })
 
 app.get('/user/:username/questions', function(req, res){
+	console.log(req.body)
 	stackoverflowclone_db = soc_db.db("StackOverflowClone")
 	stackoverflowclone_db.collection("user_accounts").findOne({"username": req.params.username}, function(err, result){
 		if(result == null){
@@ -562,6 +567,7 @@ app.get('/user/:username/questions', function(req, res){
 })
 
 app.get('/user/:username/answers', function(req, res){
+	console.log(req.body)
 	stackoverflowclone_db = soc_db.db("StackOverflowClone")
 	stackoverflowclone_db.collection("user_accounts").findOne({"username": req.params.username}, function(err, result){
 		if(result == null){
@@ -586,6 +592,7 @@ app.get('/user/:username/answers', function(req, res){
 })
 //var [post, vote] = await Promise.all([ qa.retrieve(), upvote.retrieve() ])
 app.post('/questions/:id/upvote', async function(req, res){
+	console.log(req.body)
 	stackoverflowclone_db = soc_db.db("StackOverflowClone")
 	var upvote_option
 	function retrieve_question(){
@@ -719,6 +726,7 @@ app.post('/questions/:id/upvote', async function(req, res){
 })
 
 app.post('/answers/:id/upvote', async function(req, res){
+	console.log(req.body)
 	stackoverflowclone_db = soc_db.db("StackOverflowClone")
 	var upvote_option
 	function retrieve_answer(){
@@ -851,7 +859,7 @@ app.post('/answers/:id/upvote', async function(req, res){
 })
 
 app.post('/answers/:id/accept', function(req, res){
-	console.log(req.params.id)
+	console.log(req.body)
 	stackoverflowclone_db = soc_db.db("StackOverflowClone")
 	stackoverflowclone_db.collection("question_answers").findOne({"id": req.params.id}, function(err, a_result){
 		if(err) throw err;
@@ -875,6 +883,7 @@ app.post('/answers/:id/accept', function(req, res){
 })
 
 app.post('/addmedia', upload.single('content'), function(req, res){
+	console.log(req.body)
 	if(req.session.username == null){
 		res.status(400).json({"status": "error", "id": "", "error": "User is not logged in!"})
 		return
@@ -894,8 +903,8 @@ app.post('/addmedia', upload.single('content'), function(req, res){
 })
 
 app.get('/media/:id', function(req, res){
+	console.log(req.body)
 	var file_id = req.params.id
-	console.log(file_id)
 	var query = `SELECT ext, content FROM media WHERE file_id=?;`
 	var params = [file_id]
 	cassandra_cluster.execute(query, params, function(err, result){
