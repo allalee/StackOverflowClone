@@ -232,7 +232,7 @@ app.post('/questions/add', async function(req, res){
 	}
 	var query = 'SELECT user FROM media WHERE file_id IN ?'
 	var params = [media]
-	console.log(params)
+	console.log(media)
 	cassandra_cluster.execute(query, params, function(err, result){
 		if(err) console.log(err)
 		else {
