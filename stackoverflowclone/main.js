@@ -215,8 +215,8 @@ app.post('/questions/add', async function(req, res){
 	question_dictionary["accepted_answer_id"] = null
 	question_dictionary["answer_count"] = 0
 	if(media == null || media.length == 0){
-		stackoverflowclone_db.collection("questions").insert(question_dictionary)
-		stackoverflowclone_db.collection("view_tracker").insert({"id": question_id, "usernames": [], "ips": []})
+		stackoverflowclone_db.collection("questions").insertOne(question_dictionary)
+		stackoverflowclone_db.collection("view_tracker").insertOne({"id": question_id, "usernames": [], "ips": []})
 		res.json({"status": "OK", "id": question_id, "error": ""})
 		return
 	}
@@ -251,8 +251,8 @@ app.post('/questions/add', async function(req, res){
 				res.json({"status": "error", "error": "Media does not belong to user!"})
 				return
 			} else {
-				stackoverflowclone_db.collection("questions").insert(question_dictionary)
-				stackoverflowclone_db.collection("view_tracker").insert({"id": question_id, "usernames": [], "ips": []})
+				stackoverflowclone_db.collection("questions").insertOne(question_dictionary)
+				stackoverflowclone_db.collection("view_tracker").insertOne({"id": question_id, "usernames": [], "ips": []})
 				res.json({"status": "OK", "id": question_id, "error": ""})
 				return
 			}
@@ -408,7 +408,7 @@ app.post('/questions/:id/answers/add', async function(req, res){
 		answer["media"] = media
 		if(media == null || media.length == 0){
 			stackoverflowclone_db.collection("questions").updateOne({"id": req.params.id}, {"$set": {"answer_count": result["answer_count"] + 1}})
-			stackoverflowclone_db.collection("question_answers").insert(answer)
+			stackoverflowclone_db.collection("question_answers").insertOne(answer)
 			res.json({"status": "OK", "id": answer["id"], "error": ""})
 			return	
 		}
@@ -443,7 +443,7 @@ app.post('/questions/:id/answers/add', async function(req, res){
 					return
 				} else {
 					stackoverflowclone_db.collection("questions").updateOne({"id": req.params.id}, {"$set": {"answer_count": result["answer_count"] + 1}})
-					stackoverflowclone_db.collection("question_answers").insert(answer)
+					stackoverflowclone_db.collection("question_answers").insertOne(answer)
 					res.json({"status": "OK", "id": answer["id"], "error": ""})
 					return
 				}
@@ -615,18 +615,18 @@ app.post('/questions/:id/upvote', async function(req, res){
 		if(upvote_option){ //Add one reputation to the user
 			stackoverflowclone_db.collection("questions").updateOne({"id": req.params.id}, {"$set": {"score": question["score"] + 1}})
 			stackoverflowclone_db.collection("user_accounts").updateOne({"username": question["username"]}, {"$set": {"reputation": user["reputation"] + 1}})
-			stackoverflowclone_db.collection("votes").insert({"id": uuidv4(), "post_type": "question", "username": req.session.username, "post_id": question["id"], "status": "upvote"})
+			stackoverflowclone_db.collection("votes").insertOne({"id": uuidv4(), "post_type": "question", "username": req.session.username, "post_id": question["id"], "status": "upvote"})
 			res.json({"status": "OK", "error": ""})
 			return
 		} else {
 			stackoverflowclone_db.collection("questions").updateOne({"id": req.params.id}, {"$set": {"score": question["score"] - 1}})
 			if(user["reputation"] <= 1){ //When user reputation is <= 1, we cannot go lower
-				stackoverflowclone_db.collection("votes").insert({"id": uuidv4(), "post_type": "question", "username": req.session.username, "post_id": question["id"], "status": "downvote_ignored"})
+				stackoverflowclone_db.collection("votes").insertOne({"id": uuidv4(), "post_type": "question", "username": req.session.username, "post_id": question["id"], "status": "downvote_ignored"})
 				res.json({"status": "OK", "error": ""})
 				return
 			} else { //Subtract one reputation from the user
 				stackoverflowclone_db.collection("user_accounts").updateOne({"username": question["username"]}, {"$set": {"reputation": user["reputation"] - 1}})
-				stackoverflowclone_db.collection("votes").insert({"id": uuidv4(), "post_type": "question", "username": req.session.username, "post_id": question["id"], "status": "downvote"})
+				stackoverflowclone_db.collection("votes").insertOne({"id": uuidv4(), "post_type": "question", "username": req.session.username, "post_id": question["id"], "status": "downvote"})
 				res.json({"status": "OK", "error": ""})
 				return
 			}
@@ -747,18 +747,18 @@ app.post('/answers/:id/upvote', async function(req, res){
 		if(upvote_option){ //Add one reputation to the user
 			stackoverflowclone_db.collection("question_answers").updateOne({"id": req.params.id}, {"$set": {"score": answer["score"] + 1}})
 			stackoverflowclone_db.collection("user_accounts").updateOne({"username": answer["user"]}, {"$set": {"reputation": user["reputation"] + 1}})
-			stackoverflowclone_db.collection("votes").insert({"id": uuidv4(), "post_type": "answer", "username": req.session.username, "post_id": answer["id"], "status": "upvote"})
+			stackoverflowclone_db.collection("votes").insertOne({"id": uuidv4(), "post_type": "answer", "username": req.session.username, "post_id": answer["id"], "status": "upvote"})
 			res.json({"status": "OK", "error": ""})
 			return
 		} else {
 			stackoverflowclone_db.collection("question_answers").updateOne({"id": req.params.id}, {"$set": {"score": answer["score"] - 1}})
 			if(user["reputation"] <= 1){ //When user reputation is <= 1, we cannot go lower
-				stackoverflowclone_db.collection("votes").insert({"id": uuidv4(), "post_type": "answer", "username": req.session.username, "post_id": answer["id"], "status": "downvote_ignored"})
+				stackoverflowclone_db.collection("votes").insertOne({"id": uuidv4(), "post_type": "answer", "username": req.session.username, "post_id": answer["id"], "status": "downvote_ignored"})
 				res.json({"status": "OK", "error": ""})
 				return
 			} else { //Subtract one reputation from the user
 				stackoverflowclone_db.collection("user_accounts").updateOne({"username": answer["user"]}, {"$set": {"reputation": user["reputation"] - 1}})
-				stackoverflowclone_db.collection("votes").insert({"id": uuidv4(), "post_type": "answer", "username": req.session.username, "post_id": answer["id"], "status": "downvote"})
+				stackoverflowclone_db.collection("votes").insertOne({"id": uuidv4(), "post_type": "answer", "username": req.session.username, "post_id": answer["id"], "status": "downvote"})
 				res.json({"status": "OK", "error": ""})
 				return
 			}
