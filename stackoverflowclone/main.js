@@ -225,10 +225,28 @@ app.post('/questions/add', async function(req, res){
 		res.json({"status": "error", "error": "Media tag(s) found in other questions"})
 		return
 	}
-	stackoverflowclone_db.collection("questions").insert(question_dictionary)
-	stackoverflowclone_db.collection("view_tracker").insert({"id": question_id, "usernames": [], "ips": []})
-	res.json({"status": "OK", "id": question_id, "error": ""})
-	return
+	var query = 'SELECT user FROM media WHERE file_id IN ?'
+	var params = [media]
+	cassandra_cluster.execute(query, params, function(err, result){
+		if(err) console.log(err)
+		else {
+			result["rows"].forEach(function(item){
+				if(item["user"] != req.session.username){
+					res.status(400)
+					res.json({"status": "error", "error": "Media does not belong to user!"})
+					return
+				}
+			})
+			stackoverflowclone_db.collection("questions").insert(question_dictionary)
+			stackoverflowclone_db.collection("view_tracker").insert({"id": question_id, "usernames": [], "ips": []})
+			res.json({"status": "OK", "id": question_id, "error": ""})
+			return
+		}
+	})
+	// stackoverflowclone_db.collection("questions").insert(question_dictionary)
+	// stackoverflowclone_db.collection("view_tracker").insert({"id": question_id, "usernames": [], "ips": []})
+	// res.json({"status": "OK", "id": question_id, "error": ""})
+	// return
 })
 
 app.get('/questions/:id', function(req, res){
@@ -809,8 +827,8 @@ app.post('/addmedia', upload.single('content'), function(req, res){
 	var uploaded_content = req.file.buffer
 	var file_ext = req.file.originalname.split(".")[1] //Retrieve the file extension
 	var file_id = uuidv4()
-	var query = `INSERT INTO media (file_id, ext, content) VALUES (?, ?, ?);`
-	var params = [file_id, file_ext, uploaded_content]
+	var query = `INSERT INTO media (file_id, ext, content, user) VALUES (?, ?, ?, ?);`
+	var params = [file_id, file_ext, uploaded_content, req.session.username]
 	cassandra_cluster.execute(query, params, function(err, result){
 		if(err){
 			console.log(err)
