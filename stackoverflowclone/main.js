@@ -92,6 +92,7 @@ app.post('/adduser', function(req, res){
 						if(err) throw err;
 						console.log("Account created...")
 						res.json({"status": "OK", "error": ""})
+						//res.redirect(307, "artemisia.cse356.compas.cs.stonybrook.edu:4000/mail")
 					});
 				}
 			});

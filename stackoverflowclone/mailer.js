@@ -1,12 +1,12 @@
 const send = require('gmail-send')({user: "artemisiacse356@gmail.com", pass: "cse356verify"})
 const nodemailer = require('nodemailer')
 var transporter = nodemailer.createTransport({
-	service: 'gmail',
+	host: "artemisia.cse356.compas.cs.stonybrook.edu",
+	port: 25,
 	pool: true,
 	secure: false,
-	auth: {
-		user: "artemisiacse356.2@gmail.com",
-		pass: "cse356verify"
+	tls: {
+		rejectUnauthorized: false
 	}
 })
 
@@ -60,6 +60,7 @@ function mail(receiver, validation_key){
 		subject: 'E-mail Verification',
 		text: "validation key : <" + validation_key + ">"
 	}
+	console.log("Transporter trying to send mail...")
 	transporter.sendMail(mailOptions, function(err, info){
 		if(err) {
 			console.log(err)
