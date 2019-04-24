@@ -259,91 +259,173 @@ app.post('/questions/add', async function(req, res){
 			}
 		}
 	})
-	// stackoverflowclone_db.collection("questions").insert(question_dictionary)
-	// stackoverflowclone_db.collection("view_tracker").insert({"id": question_id, "usernames": [], "ips": []})
-	// res.json({"status": "OK", "id": question_id, "error": ""})
-	// return
 })
 
-app.get('/questions/:id', function(req, res){
-	console.log(req.method)
-	console.log(req.url)
-	console.log(req.body)
-	var user
+app.get('/questions/:id', async function(req, res){
+	// console.log(req.method)
+	// console.log(req.url)
+	// console.log(req.body)
 	stackoverflowclone_db = soc_db.db("StackOverflowClone")
-	stackoverflowclone_db.collection("questions").findOne({"id": req.params.id}, {projection: {_id: 0}}, async function(err, result){
-		function retrieve_user(username){
-			return stackoverflowclone_db.collection("user_accounts").findOne({"username": username})
-		}
-		found_question = result
-		console.log(result) 
-		if(result == null){
-			res.status(400).json({"status": "error", "question": "", "error": "Question not found"})
+	var username = req.session.username //If it is null then user is not logged in, if not then they are logged in
+	function getInitialQuestion(id){
+		return stackoverflowclone_db.collection("questions").findOne({"id": id}, {projection: {_id: 0}})
+	}
+	function getViewTracker(id){
+		return stackoverflowclone_db.collection("view_tracker").findOne({"id": id})
+	}
+	var promise_returns = await Promise.all([getInitialQuestion(req.params.id), getViewTracker(req.params.id)]) //promise_returns[0] is the question, [1] is the view_tracker
+	var found_question = promise_returns[0]
+	var view_tracker = promise_returns[1]
+	if(found_question == null){
+		res.status(400)
+		res.json({"status": "error", "error": "Question not found!"})
+		return
+	}
+	function getUser(username){
+		return stackoverflowclone_db.collection("user_accounts").findOne({"username": username})
+	}
+	var user = await Promise.all([getUser(found_question["username"])]) //user[0] has the username
+	if(username == null){ //Not logged in
+		viewer_ip = req.clientIp
+		if(!view_tracker["ips"].includes(viewer_ip)){ //If the list doesn't include the ip
+			stackoverflowclone_db.collection("view_tracker").updateOne({"id": req.params.id}, {"$push": {"ips": viewer_ip}}) //Update the view tracker to have the ip
+			stackoverflowclone_db.collection("questions").updateOne({"id": req.params.id}, {"$set": {"view_count": found_question["view_count"] + 1}})//Increment the question's view count
+			res.json({"id": req.params.id, 
+				"user": {"username": user[0]["username"],
+				"reputation": user[0]["reputation"]}, 
+				"title": found_question["title"], 
+				"body": found_question["body"],
+				"score": found_question["score"],
+				"view_count": found_question["view_count"] + 1,
+				"answer_count": found_question["answer_count"],
+				"timestamp": found_question["timestamp"],
+				"media": found_question["media"],
+				"tags": found_question["tags"],
+				"accepted_answer_id": found_question["accepted_answer_id"]})
 			return
 		} else {
-			user = await Promise.all([retrieve_user(result["username"])])
-			stackoverflowclone_db.collection("view_tracker").findOne({"id": req.params.id}, function(err, result){
-				found_view_tracker = result
-				if(req.session.username != null){ //If the user is logged in then we check by username
-					console.log("Tracking by usernames...")
-					console.log(req.session.username)
-					view_tracker_user_list = found_view_tracker["usernames"]
-					if (!view_tracker_user_list.includes(req.session.username)){
-						stackoverflowclone_db.collection("view_tracker").updateOne({"id": req.params.id}, {"$push": {"usernames": req.session.username}}, function(err, result){
-							if(err) console.log(err)
-							stackoverflowclone_db.collection("questions").updateOne({"id": req.params.id}, {"$set": {"view_count": found_question["view_count"] + 1}}, function(err, result){
-								if(err) console.log(err)
-								stackoverflowclone_db.collection("questions").findOne({"id": req.params.id}, {projection: {_id: 0}}, function(err, result){
-									if (err) console.log(err)
-									result["user"] = {"username": user[0]["username"], "reputation": user[0]["reputation"]}
-									res.json({"status": "OK", "question": result, "error": ""})
-									console.log("Found new username")
-									return
-								})
-							})
-						})
-					} else {
-						stackoverflowclone_db.collection("questions").findOne({"id": req.params.id}, {projection: {_id: 0}}, function(err, result){
-							if(err) console.log(err)
-							result["user"] = {"username": user[0]["username"], "reputation": user[0]["reputation"]}
-							res.json({"status": "OK", "question": result, "error": ""})
-							return
-						})
-					}
-				} else { //If the user is not logged in then we check by ip
-					console.log("Tracking by IPs")
-					console.log(req.clientIp)
-					view_tracker_user_list = found_view_tracker["ips"]
-					viewer_ip = req.clientIp
-					if(!view_tracker_user_list.includes(viewer_ip)){
-						console.log("Ip not found")
-						stackoverflowclone_db.collection("view_tracker").updateOne({"id": req.params.id}, {"$push": {"ips": viewer_ip}}, function(err, result){
-							if(err) console.log(err)
-							stackoverflowclone_db.collection("questions").updateOne({"id": req.params.id}, {"$set": {"view_count": found_question["view_count"] + 1}}, function(err, result){
-								if(err) console.log(err)
-								stackoverflowclone_db.collection("questions").findOne({"id": req.params.id}, {projection: {_id: 0}}, function(err, result){
-									if(err) console.log(err)
-									result["user"] = {"username": user[0]["username"], "reputation": user[0]["reputation"]}
-									res.json({"status": "OK", "question": result, "error": ""})
-									return
-								})
-							})
-						})
-
-					} else {
-						console.log("IP was found")
-						stackoverflowclone_db.collection("questions").findOne({"id": req.params.id}, {projection: {_id: 0}}, function(err, result){
-							if(err) console.log(err)
-							result["user"] = {"username": user[0]["username"], "reputation": user[0]["reputation"]}
-							console.log(result)
-							res.json({"status": "OK", "question": result, "error": ""})
-							return
-						})
-					}
-				}
-			})
+			res.json({"id": req.params.id, 
+				"user": {"username": user[0]["username"],
+				"reputation": user[0]["reputation"]}, 
+				"title": found_question["title"], 
+				"body": found_question["body"],
+				"score": found_question["score"],
+				"view_count": found_question["view_count"],
+				"answer_count": found_question["answer_count"],
+				"timestamp": found_question["timestamp"],
+				"media": found_question["media"],
+				"tags": found_question["tags"],
+				"accepted_answer_id": found_question["accepted_answer_id"]})
+			return
 		}
-	})
+	} else {	//Logged in
+		if(!view_tracker["usernames"].includes(username)){ //If the list doesn't include the username
+			stackoverflowclone_db.collection("view_tracker").updateOne({"id": req.params.id}, {"$push": {"usernames": req.session.username}}) //Update the view tracker to have the name
+			stackoverflowclone_db.collection("questions").updateOne({"id": req.params.id}, {"$set": {"view_count": found_question["view_count"] + 1}})//Increment the questions collection's view count
+			res.json({"id": req.params.id, 
+				"user": {"username": user[0]["username"],
+				"reputation": user[0]["reputation"]}, 
+				"title": found_question["title"], 
+				"body": found_question["body"],
+				"score": found_question["score"],
+				"view_count": found_question["view_count"] + 1,
+				"answer_count": found_question["answer_count"],
+				"timestamp": found_question["timestamp"],
+				"media": found_question["media"],
+				"tags": found_question["tags"],
+				"accepted_answer_id": found_question["accepted_answer_id"]})
+			return
+		} else {
+			res.json({"id": req.params.id, 
+				"user": {"username": user[0]["username"],
+				"reputation": user[0]["reputation"]}, 
+				"title": found_question["title"], 
+				"body": found_question["body"],
+				"score": found_question["score"],
+				"view_count": found_question["view_count"],
+				"answer_count": found_question["answer_count"],
+				"timestamp": found_question["timestamp"],
+				"media": found_question["media"],
+				"tags": found_question["tags"],
+				"accepted_answer_id": found_question["accepted_answer_id"]})
+			return
+		}
+	}
+
+
+	// stackoverflowclone_db.collection("questions").findOne({"id": req.params.id}, {projection: {_id: 0}}, async function(err, result){
+	// 	function retrieve_user(username){
+	// 		return stackoverflowclone_db.collection("user_accounts").findOne({"username": username})
+	// 	}
+	// 	found_question = result
+	// 	console.log(result) 
+	// 	if(result == null){
+	// 		res.status(400).json({"status": "error", "question": "", "error": "Question not found"})
+	// 		return
+	// 	} else {
+	// 		user = await Promise.all([retrieve_user(result["username"])])
+	// 		stackoverflowclone_db.collection("view_tracker").findOne({"id": req.params.id}, function(err, result){
+	// 			found_view_tracker = result
+	// 			if(req.session.username != null){ //If the user is logged in then we check by username
+	// 				console.log("Tracking by usernames...")
+	// 				console.log(req.session.username)
+	// 				view_tracker_user_list = found_view_tracker["usernames"]
+	// 				if (!view_tracker_user_list.includes(req.session.username)){
+	// 					stackoverflowclone_db.collection("view_tracker").updateOne({"id": req.params.id}, {"$push": {"usernames": req.session.username}}, function(err, result){
+	// 						if(err) console.log(err)
+	// 						stackoverflowclone_db.collection("questions").updateOne({"id": req.params.id}, {"$set": {"view_count": found_question["view_count"] + 1}}, function(err, result){
+	// 							if(err) console.log(err)
+	// 							stackoverflowclone_db.collection("questions").findOne({"id": req.params.id}, {projection: {_id: 0}}, function(err, result){
+	// 								if (err) console.log(err)
+	// 								result["user"] = {"username": user[0]["username"], "reputation": user[0]["reputation"]}
+	// 								res.json({"status": "OK", "question": result, "error": ""})
+	// 								console.log("Found new username")
+	// 								return
+	// 							})
+	// 						})
+	// 					})
+	// 				} else {
+	// 					stackoverflowclone_db.collection("questions").findOne({"id": req.params.id}, {projection: {_id: 0}}, function(err, result){
+	// 						if(err) console.log(err)
+	// 						result["user"] = {"username": user[0]["username"], "reputation": user[0]["reputation"]}
+	// 						res.json({"status": "OK", "question": result, "error": ""})
+	// 						return
+	// 					})
+	// 				}
+	// 			} else { //If the user is not logged in then we check by ip
+	// 				console.log("Tracking by IPs")
+	// 				console.log(req.clientIp)
+	// 				view_tracker_user_list = found_view_tracker["ips"]
+	// 				viewer_ip = req.clientIp
+	// 				if(!view_tracker_user_list.includes(viewer_ip)){
+	// 					console.log("Ip not found")
+	// 					stackoverflowclone_db.collection("view_tracker").updateOne({"id": req.params.id}, {"$push": {"ips": viewer_ip}}, function(err, result){
+	// 						if(err) console.log(err)
+	// 						stackoverflowclone_db.collection("questions").updateOne({"id": req.params.id}, {"$set": {"view_count": found_question["view_count"] + 1}}, function(err, result){
+	// 							if(err) console.log(err)
+	// 							stackoverflowclone_db.collection("questions").findOne({"id": req.params.id}, {projection: {_id: 0}}, function(err, result){
+	// 								if(err) console.log(err)
+	// 								result["user"] = {"username": user[0]["username"], "reputation": user[0]["reputation"]}
+	// 								res.json({"status": "OK", "question": result, "error": ""})
+	// 								return
+	// 							})
+	// 						})
+	// 					})
+
+	// 				} else {
+	// 					console.log("IP was found")
+	// 					stackoverflowclone_db.collection("questions").findOne({"id": req.params.id}, {projection: {_id: 0}}, function(err, result){
+	// 						if(err) console.log(err)
+	// 						result["user"] = {"username": user[0]["username"], "reputation": user[0]["reputation"]}
+	// 						console.log(result)
+	// 						res.json({"status": "OK", "question": result, "error": ""})
+	// 						return
+	// 					})
+	// 				}
+	// 			}
+	// 		})
+	// 	}
+	// })
 })
 
 app.delete('/questions/:id', function(req, res){
