@@ -381,7 +381,7 @@ app.post('/questions/:id/answers/add', async function(req, res){
 		res.status(400).json({"status": "error", "id": "", "error": "User is not logged in!"})
 		return
 	}
-	stackoverflowclone_db.collection("questions").findOne({"id": req.params.id}, function(err, result){
+	stackoverflowclone_db.collection("questions").findOne({"id": req.params.id}, async function(err, result){
 		var request_body = req.body
 		var media
 		if(result == null){
