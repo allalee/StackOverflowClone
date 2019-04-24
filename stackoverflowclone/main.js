@@ -92,7 +92,6 @@ app.post('/adduser', function(req, res){
 						if(err) throw err;
 						console.log("Account created...")
 						res.json({"status": "OK", "error": ""})
-						//res.redirect(307, "artemisia.cse356.compas.cs.stonybrook.edu:4000/mail")
 					});
 				}
 			});
@@ -173,7 +172,7 @@ app.get('/questions/add', function(err, res){
 	res.sendFile("/templates/add_question.html", {root: __dirname})
 })
 
-app.post('/questions/add', function(req, res){
+app.post('/questions/add', async function(req, res){
 	if(req.session.username == null){
 		res.status(400).send({"status": "error", "error": "User is not logged in!"})
 		return
@@ -215,6 +214,17 @@ app.post('/questions/add', function(req, res){
 	question_dictionary["tags"] = tags
 	question_dictionary["accepted_answer_id"] = null
 	question_dictionary["answer_count"] = 0
+	//Check to make sure the media doesn't exist in another question
+	function track_media(input){
+		return stackoverflowclone_db.collection("questions").find({"media": {'$in': input}}).toArray()
+	}
+	var result = await Promise.all([track_media(media)])
+	console.log(result[0].length)
+	if(result[0].length != 0){
+		res.status(400)
+		res.json({"status": "error", "error": "Media tag(s) found in other questions"})
+		return
+	}
 	stackoverflowclone_db.collection("questions").insert(question_dictionary)
 	stackoverflowclone_db.collection("view_tracker").insert({"id": question_id, "usernames": [], "ips": []})
 	res.json({"status": "OK", "id": question_id, "error": ""})
