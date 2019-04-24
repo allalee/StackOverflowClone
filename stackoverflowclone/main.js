@@ -864,19 +864,20 @@ app.get('/media/:id', function(req, res){
 			res.status(400)
 			res.json({"status": "error", "error": "Image not found"})
 			return
+		} else {
+			console.log(result.rows[0].ext)
+			header = result.rows[0].ext
+			if(header == "jpg"){
+				res.header("Content-Type", "image/jpeg")
+			}
+			if(header == "gif"){
+				res.header("Content-Type", "image/gif")
+			}
+			if(header == "png"){
+				res.header("Content-Type", "image/png")
+			}
+			res.send(result.rows[0].content)
 		}
-		console.log(result.rows[0].ext)
-		header = result.rows[0].ext
-		if(header == "jpg"){
-			res.header("Content-Type", "image/jpeg")
-		}
-		if(header == "gif"){
-			res.header("Content-Type", "image/gif")
-		}
-		if(header == "png"){
-			res.header("Content-Type", "image/png")
-		}
-		res.send(result.rows[0].content)
 	})
 })
 
