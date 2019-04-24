@@ -225,7 +225,6 @@ app.post('/questions/add', async function(req, res){
 		return stackoverflowclone_db.collection("questions").find({"media": {'$in': input}}).toArray()
 	}
 	var result = await Promise.all([track_media(media)])
-	console.log(result[0].length)
 	if(result[0].length != 0){
 		res.status(400)
 		res.json({"status": "error", "error": "Media tag(s) found in other questions"})
@@ -233,6 +232,7 @@ app.post('/questions/add', async function(req, res){
 	}
 	var query = 'SELECT user FROM media WHERE file_id IN ?'
 	var params = [media]
+	console.log(params)
 	cassandra_cluster.execute(query, params, function(err, result){
 		if(err) console.log(err)
 		else {
