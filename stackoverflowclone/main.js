@@ -220,14 +220,17 @@ app.post('/questions/add', async function(req, res){
 		res.json({"status": "OK", "id": question_id, "error": ""})
 		return
 	}
-	//Check to make sure the media doesn't exist in another question
+	//Check to make sure the media doesn't exist in another question or answer
 	function track_media(input){
 		return stackoverflowclone_db.collection("questions").find({"media": {'$in': input}}).toArray()
 	}
-	var result = await Promise.all([track_media(media)])
-	if(result[0].length != 0){
+	function track_media_a(input){
+		return stackoverflowclone_db.collection("question_answers").find({"media": {"$in": input}}).toArray()
+	}
+	var result = await Promise.all([track_media(media), track_media_a(media)])
+	if(result[0].length != 0 || result[1].length != 0){
 		res.status(400)
-		res.json({"status": "error", "error": "Media tag(s) found in other questions"})
+		res.json({"status": "error", "error": "Media tag(s) found in other questions/answers"})
 		return
 	}
 	var query = 'SELECT user FROM media WHERE file_id IN ?'
@@ -403,10 +406,49 @@ app.post('/questions/:id/answers/add', function(req, res){
 		answer["is_accepted"] = false
 		answer["timestamp"] = Math.floor(Date.now()/1000)
 		answer["media"] = media
-		stackoverflowclone_db.collection("questions").updateOne({"id": req.params.id}, {"$set": {"answer_count": result["answer_count"] + 1}})
-		stackoverflowclone_db.collection("question_answers").insert(answer)
-		res.json({"status": "OK", "id": answer["id"], "error": ""})
-		return
+		if(media == null or media.length == 0){
+			stackoverflowclone_db.collection("questions").updateOne({"id": req.params.id}, {"$set": {"answer_count": result["answer_count"] + 1}})
+			stackoverflowclone_db.collection("question_answers").insert(answer)
+			res.json({"status": "OK", "id": answer["id"], "error": ""})
+			return	
+		}
+		function track_media(input){
+			return stackoverflowclone_db.collection("questions").find({"media": {'$in': input}}).toArray()
+		}
+		function track_media_a(input){
+			return stackoverflowclone_db.collection("question_answers").find({"media": {"$in": input}}).toArray()
+		}
+		var result = await Promise.all([track_media(media), track_media_a(media)])
+		if(result[0].length != 0 || result[1].length != 0){
+			res.status(400)
+			res.json({"status": "error", "error": "Media tag(s) found in other questions/answers"})
+			return
+		}
+		var query = 'SELECT user FROM media WHERE file_id IN ?'
+		var params = [media]
+		console.log(media)
+		cassandra_cluster.execute(query, params, function(err, result){
+			if(err) console.log(err)
+			else {
+				var media_error = false
+				result["rows"].forEach(function(item){
+					if(item["user"] != req.session.username){
+						media_error = true
+						return
+					}
+				})
+				if(media_error){
+					res.status(400)
+					res.json({"status": "error", "error": "Media does not belong to user!"})
+					return
+				} else {
+					stackoverflowclone_db.collection("questions").updateOne({"id": req.params.id}, {"$set": {"answer_count": result["answer_count"] + 1}})
+					stackoverflowclone_db.collection("question_answers").insert(answer)
+					res.json({"status": "OK", "id": answer["id"], "error": ""})
+					return
+				}
+			}
+		})
 	})
 })
 
