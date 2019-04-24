@@ -225,6 +225,12 @@ app.post('/questions/add', async function(req, res){
 		res.json({"status": "error", "error": "Media tag(s) found in other questions"})
 		return
 	}
+	if(media == null){
+		stackoverflowclone_db.collection("questions").insert(question_dictionary)
+		stackoverflowclone_db.collection("view_tracker").insert({"id": question_id, "usernames": [], "ips": []})
+		res.json({"status": "OK", "id": question_id, "error": ""})
+		return
+	}
 	var query = 'SELECT user FROM media WHERE file_id IN ?'
 	var params = [media]
 	cassandra_cluster.execute(query, params, function(err, result){
