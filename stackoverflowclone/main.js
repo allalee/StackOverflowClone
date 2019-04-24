@@ -228,6 +228,7 @@ app.post('/questions/add', async function(req, res){
 		return stackoverflowclone_db.collection("question_answers").find({"media": {"$in": input}}).toArray()
 	}
 	var result = await Promise.all([track_media(media), track_media_a(media)])
+	console.log("Question length is: " + result[0].length + " ------- Answer length is: " + result[1].length)
 	if(result[0].length != 0 || result[1].length != 0){
 		res.status(400)
 		res.json({"status": "error", "error": "Media tag(s) found in other questions/answers"})
