@@ -406,7 +406,7 @@ app.post('/questions/:id/answers/add', function(req, res){
 		answer["is_accepted"] = false
 		answer["timestamp"] = Math.floor(Date.now()/1000)
 		answer["media"] = media
-		if(media == null or media.length == 0){
+		if(media == null || media.length == 0){
 			stackoverflowclone_db.collection("questions").updateOne({"id": req.params.id}, {"$set": {"answer_count": result["answer_count"] + 1}})
 			stackoverflowclone_db.collection("question_answers").insert(answer)
 			res.json({"status": "OK", "id": answer["id"], "error": ""})
