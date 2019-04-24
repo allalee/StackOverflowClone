@@ -214,6 +214,12 @@ app.post('/questions/add', async function(req, res){
 	question_dictionary["tags"] = tags
 	question_dictionary["accepted_answer_id"] = null
 	question_dictionary["answer_count"] = 0
+	if(media == null){
+		stackoverflowclone_db.collection("questions").insert(question_dictionary)
+		stackoverflowclone_db.collection("view_tracker").insert({"id": question_id, "usernames": [], "ips": []})
+		res.json({"status": "OK", "id": question_id, "error": ""})
+		return
+	}
 	//Check to make sure the media doesn't exist in another question
 	function track_media(input){
 		return stackoverflowclone_db.collection("questions").find({"media": {'$in': input}}).toArray()
@@ -223,12 +229,6 @@ app.post('/questions/add', async function(req, res){
 	if(result[0].length != 0){
 		res.status(400)
 		res.json({"status": "error", "error": "Media tag(s) found in other questions"})
-		return
-	}
-	if(media == null){
-		stackoverflowclone_db.collection("questions").insert(question_dictionary)
-		stackoverflowclone_db.collection("view_tracker").insert({"id": question_id, "usernames": [], "ips": []})
-		res.json({"status": "OK", "id": question_id, "error": ""})
 		return
 	}
 	var query = 'SELECT user FROM media WHERE file_id IN ?'
