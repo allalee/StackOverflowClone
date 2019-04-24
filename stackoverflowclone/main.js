@@ -995,7 +995,6 @@ app.get('/media/:id', function(req, res){
 		}
 		console.log(result)
 		if(result.rowLength == 0){
-			res.status(400)
 			res.json({"status": "error", "error": "Image not found"})
 			return
 		} else {
