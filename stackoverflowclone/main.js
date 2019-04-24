@@ -375,7 +375,7 @@ app.get('/questions/:id/answers/add', function(req, res){
 	res.sendFile("/templates/add_question_answer.html", {root: __dirname})
 })
 
-app.post('/questions/:id/answers/add', function(req, res){
+app.post('/questions/:id/answers/add', async function(req, res){
 	stackoverflowclone_db = soc_db.db("StackOverflowClone")
 	if(req.session.username == null){
 		res.status(400).json({"status": "error", "id": "", "error": "User is not logged in!"})
