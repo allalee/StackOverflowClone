@@ -236,17 +236,23 @@ app.post('/questions/add', async function(req, res){
 	cassandra_cluster.execute(query, params, function(err, result){
 		if(err) console.log(err)
 		else {
+			var media_error = false
 			result["rows"].forEach(function(item){
 				if(item["user"] != req.session.username){
-					res.status(400)
-					res.json({"status": "error", "error": "Media does not belong to user!"})
+					media_error = true
 					return
 				}
 			})
-			stackoverflowclone_db.collection("questions").insert(question_dictionary)
-			stackoverflowclone_db.collection("view_tracker").insert({"id": question_id, "usernames": [], "ips": []})
-			res.json({"status": "OK", "id": question_id, "error": ""})
-			return
+			if(media_error){
+				res.status(400)
+				res.json({"status": "error", "error": "Media does not belong to user!"})
+				return
+			} else {
+				stackoverflowclone_db.collection("questions").insert(question_dictionary)
+				stackoverflowclone_db.collection("view_tracker").insert({"id": question_id, "usernames": [], "ips": []})
+				res.json({"status": "OK", "id": question_id, "error": ""})
+				return
+			}
 		}
 	})
 	// stackoverflowclone_db.collection("questions").insert(question_dictionary)
