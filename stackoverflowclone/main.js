@@ -898,7 +898,7 @@ app.post('/addmedia', upload.single('content'), function(req, res){
 
 app.get('/media/:id', function(req, res){
 	var file_id = req.params.id
-	if(id == null){
+	if(file_id == null){
 		res.status(400)
 		res.json({"status": "error", "error": "id is null"})
 		return
