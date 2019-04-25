@@ -237,7 +237,7 @@ app.post('/questions/add', async function(req, res){
 	var query = 'SELECT user FROM media WHERE file_id IN ?'
 	var params = [media]
 	console.log(media)
-	cassandra_cluster.execute(query, params, function(err, result){
+	cassandra_cluster.execute(query, params, async function(err, result){
 		if(err) console.log(err)
 		else {
 			var media_error = false
@@ -252,8 +252,13 @@ app.post('/questions/add', async function(req, res){
 				res.json({"status": "error", "error": "Media does not belong to user!"})
 				return
 			} else {
-				stackoverflowclone_db.collection("questions").insertOne(question_dictionary)
-				stackoverflowclone_db.collection("view_tracker").insertOne({"id": question_id, "usernames": [], "ips": []})
+				function write_q(){
+					return stackoverflowclone_db.collection("questions").insertOne(question_dictionary)
+				}
+				function write_v(){
+					return stackoverflowclone_db.collection("view_tracker").insertOne({"id": question_id, "usernames": [], "ips": []})
+				}
+				var m = await Promise.all([write_q(), write_v()])
 				res.json({"status": "OK", "id": question_id, "error": ""})
 				return
 			}
