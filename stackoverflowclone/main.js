@@ -864,6 +864,9 @@ app.post('/answers/:id/accept', function(req, res){
 			if(req.session.username != q_result["username"]){
 				res.status(400).json({"status": "error", "error": "User trying to accept answer is not the asker of the question!"})
 				return
+			} else if (q_result["accepted_answer_id"] != null){
+				res.status(400).json({"status": "error", "error": "Question already has an accepted answer"})
+				return
 			} else {
 				stackoverflowclone_db.collection("questions").updateOne({"id": a_result["q_id"]},  {"$set": {"accepted_answer_id": a_result["id"]}})
 				stackoverflowclone_db.collection("question_answers").updateOne({"id": req.params.id},  {"$set": {"is_accepted": true}})
@@ -895,6 +898,11 @@ app.post('/addmedia', upload.single('content'), function(req, res){
 
 app.get('/media/:id', function(req, res){
 	var file_id = req.params.id
+	if(id == null){
+		res.status(400)
+		res.json("status": "error", "error": "id is null")
+		return
+	}
 	var query = `SELECT ext, content FROM media WHERE file_id=?;`
 	var params = [file_id]
 	cassandra_cluster.execute(query, params, function(err, result){
