@@ -924,7 +924,7 @@ app.post('/addmedia', upload.single('content'), function(req, res){
 			return
 		}
 		res.json({"status": "OK", "id": file_id, "error": ""})
-		console.log(file_id + " has been uploaded into the database with ext: " + ext + ", user: " + req.session.username)
+		console.log(file_id + " has been uploaded into the database with ext: " + file_ext + ", user: " + req.session.username)
 	})
 })
 
