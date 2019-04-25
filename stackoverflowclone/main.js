@@ -356,81 +356,6 @@ app.get('/questions/:id', async function(req, res){
 			return
 		}
 	}
-
-
-	// stackoverflowclone_db.collection("questions").findOne({"id": req.params.id}, {projection: {_id: 0}}, async function(err, result){
-	// 	function retrieve_user(username){
-	// 		return stackoverflowclone_db.collection("user_accounts").findOne({"username": username})
-	// 	}
-	// 	found_question = result
-	// 	console.log(result) 
-	// 	if(result == null){
-	// 		res.status(400).json({"status": "error", "question": "", "error": "Question not found"})
-	// 		return
-	// 	} else {
-	// 		user = await Promise.all([retrieve_user(result["username"])])
-	// 		stackoverflowclone_db.collection("view_tracker").findOne({"id": req.params.id}, function(err, result){
-	// 			found_view_tracker = result
-	// 			if(req.session.username != null){ //If the user is logged in then we check by username
-	// 				console.log("Tracking by usernames...")
-	// 				console.log(req.session.username)
-	// 				view_tracker_user_list = found_view_tracker["usernames"]
-	// 				if (!view_tracker_user_list.includes(req.session.username)){
-	// 					stackoverflowclone_db.collection("view_tracker").updateOne({"id": req.params.id}, {"$push": {"usernames": req.session.username}}, function(err, result){
-	// 						if(err) console.log(err)
-	// 						stackoverflowclone_db.collection("questions").updateOne({"id": req.params.id}, {"$set": {"view_count": found_question["view_count"] + 1}}, function(err, result){
-	// 							if(err) console.log(err)
-	// 							stackoverflowclone_db.collection("questions").findOne({"id": req.params.id}, {projection: {_id: 0}}, function(err, result){
-	// 								if (err) console.log(err)
-	// 								result["user"] = {"username": user[0]["username"], "reputation": user[0]["reputation"]}
-	// 								res.json({"status": "OK", "question": result, "error": ""})
-	// 								console.log("Found new username")
-	// 								return
-	// 							})
-	// 						})
-	// 					})
-	// 				} else {
-	// 					stackoverflowclone_db.collection("questions").findOne({"id": req.params.id}, {projection: {_id: 0}}, function(err, result){
-	// 						if(err) console.log(err)
-	// 						result["user"] = {"username": user[0]["username"], "reputation": user[0]["reputation"]}
-	// 						res.json({"status": "OK", "question": result, "error": ""})
-	// 						return
-	// 					})
-	// 				}
-	// 			} else { //If the user is not logged in then we check by ip
-	// 				console.log("Tracking by IPs")
-	// 				console.log(req.clientIp)
-	// 				view_tracker_user_list = found_view_tracker["ips"]
-	// 				viewer_ip = req.clientIp
-	// 				if(!view_tracker_user_list.includes(viewer_ip)){
-	// 					console.log("Ip not found")
-	// 					stackoverflowclone_db.collection("view_tracker").updateOne({"id": req.params.id}, {"$push": {"ips": viewer_ip}}, function(err, result){
-	// 						if(err) console.log(err)
-	// 						stackoverflowclone_db.collection("questions").updateOne({"id": req.params.id}, {"$set": {"view_count": found_question["view_count"] + 1}}, function(err, result){
-	// 							if(err) console.log(err)
-	// 							stackoverflowclone_db.collection("questions").findOne({"id": req.params.id}, {projection: {_id: 0}}, function(err, result){
-	// 								if(err) console.log(err)
-	// 								result["user"] = {"username": user[0]["username"], "reputation": user[0]["reputation"]}
-	// 								res.json({"status": "OK", "question": result, "error": ""})
-	// 								return
-	// 							})
-	// 						})
-	// 					})
-
-	// 				} else {
-	// 					console.log("IP was found")
-	// 					stackoverflowclone_db.collection("questions").findOne({"id": req.params.id}, {projection: {_id: 0}}, function(err, result){
-	// 						if(err) console.log(err)
-	// 						result["user"] = {"username": user[0]["username"], "reputation": user[0]["reputation"]}
-	// 						console.log(result)
-	// 						res.json({"status": "OK", "question": result, "error": ""})
-	// 						return
-	// 					})
-	// 				}
-	// 			}
-	// 		})
-	// 	}
-	// })
 })
 
 app.delete('/questions/:id', function(req, res){
@@ -464,7 +389,6 @@ app.get('/questions/:id/answers/add', function(req, res){
 })
 
 app.post('/questions/:id/answers/add', async function(req, res){
-	console.log(req.body)
 	stackoverflowclone_db = soc_db.db("StackOverflowClone")
 	if(req.session.username == null){
 		res.status(400).json({"status": "error", "id": "", "error": "User is not logged in!"})
@@ -542,7 +466,6 @@ app.post('/questions/:id/answers/add', async function(req, res){
 })
 
 app.get('/questions/:id/answers', function(req,res){
-	console.log(req.body)
 	stackoverflowclone_db = soc_db.db("StackOverflowClone")
 	stackoverflowclone_db.collection("questions").findOne({"id": req.params.id}, function(err, result){
 		if(result == null){
@@ -561,7 +484,6 @@ app.get('/search', function(req, res){
 })
 
 app.post('/search', function(req, res){
-	console.log(req.body)
 	var current_timestamp, question_limit, sort_by
 	var timestamp = req.body.timestamp
 	var limit = req.body.limit
@@ -612,7 +534,6 @@ app.post('/search', function(req, res){
 })
 
 app.get('/user/:username', function(req, res){
-	console.log(req.body)
 	stackoverflowclone_db = soc_db.db("StackOverflowClone")
 	stackoverflowclone_db.collection("user_accounts").findOne({"username": req.params.username}, function(err, result){
 		if(result == null){
@@ -628,7 +549,6 @@ app.get('/user/:username', function(req, res){
 })
 
 app.get('/user/:username/questions', function(req, res){
-	console.log(req.body)
 	stackoverflowclone_db = soc_db.db("StackOverflowClone")
 	stackoverflowclone_db.collection("user_accounts").findOne({"username": req.params.username}, function(err, result){
 		if(result == null){
@@ -654,7 +574,6 @@ app.get('/user/:username/questions', function(req, res){
 })
 
 app.get('/user/:username/answers', function(req, res){
-	console.log(req.body)
 	stackoverflowclone_db = soc_db.db("StackOverflowClone")
 	stackoverflowclone_db.collection("user_accounts").findOne({"username": req.params.username}, function(err, result){
 		if(result == null){
@@ -679,7 +598,6 @@ app.get('/user/:username/answers', function(req, res){
 })
 //var [post, vote] = await Promise.all([ qa.retrieve(), upvote.retrieve() ])
 app.post('/questions/:id/upvote', async function(req, res){
-	console.log(req.body)
 	stackoverflowclone_db = soc_db.db("StackOverflowClone")
 	var upvote_option
 	function retrieve_question(){
@@ -701,11 +619,9 @@ app.post('/questions/:id/upvote', async function(req, res){
 		upvote_option = true
 	else
 		upvote_option = req.body.upvote
-	console.log(question)
-	console.log(question["username"])
 	var user = await Promise.all([retrieve_user(question["username"])])
 	user = user[0]
-	console.log(user) //User of the asker
+	console.log(upvote_option + " id: " + req.params.id)
 	if(vote == null){ //If a vote document doesn't exist in the database
 		if(upvote_option){ //Add one reputation to the user
 			stackoverflowclone_db.collection("questions").updateOne({"id": req.params.id}, {"$set": {"score": question["score"] + 1}})
@@ -813,7 +729,6 @@ app.post('/questions/:id/upvote', async function(req, res){
 })
 
 app.post('/answers/:id/upvote', async function(req, res){
-	console.log(req.body)
 	stackoverflowclone_db = soc_db.db("StackOverflowClone")
 	var upvote_option
 	function retrieve_answer(){
@@ -835,10 +750,9 @@ app.post('/answers/:id/upvote', async function(req, res){
 		upvote_option = true
 	else
 		upvote_option = req.body.upvote
-	console.log(answer)
+	console.log(upvote_option + " id: " + req.params.id)
 	var user = await Promise.all([retrieve_user(answer["user"])])
 	user = user[0]
-	console.log(user) //User of the asker
 	if(vote == null){ //If a vote document doesn't exist in the database
 		if(upvote_option){ //Add one reputation to the user
 			stackoverflowclone_db.collection("question_answers").updateOne({"id": req.params.id}, {"$set": {"score": answer["score"] + 1}})
@@ -946,7 +860,6 @@ app.post('/answers/:id/upvote', async function(req, res){
 })
 
 app.post('/answers/:id/accept', function(req, res){
-	console.log(req.body)
 	stackoverflowclone_db = soc_db.db("StackOverflowClone")
 	stackoverflowclone_db.collection("question_answers").findOne({"id": req.params.id}, function(err, a_result){
 		if(err) throw err;
@@ -970,7 +883,6 @@ app.post('/answers/:id/accept', function(req, res){
 })
 
 app.post('/addmedia', upload.single('content'), function(req, res){
-	console.log(req.body)
 	if(req.session.username == null){
 		res.status(400).json({"status": "error", "id": "", "error": "User is not logged in!"})
 		return
@@ -990,7 +902,6 @@ app.post('/addmedia', upload.single('content'), function(req, res){
 })
 
 app.get('/media/:id', function(req, res){
-	console.log(req.body)
 	var file_id = req.params.id
 	var query = `SELECT ext, content FROM media WHERE file_id=?;`
 	var params = [file_id]
