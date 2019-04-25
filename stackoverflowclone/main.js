@@ -371,7 +371,6 @@ app.delete('/questions/:id', function(req, res){
 			res.send("Forbidden delete of question not owned by user")
 			return
 		}
-
 		var query = "DELETE FROM media WHERE file_id IN ?;"
 		var params = result["media"]
 		function deleteManyAnswers(q_id){
@@ -380,7 +379,19 @@ app.delete('/questions/:id', function(req, res){
 		function deleteQuestion(id){
 			return stackoverflowclone_db.collection("questions").deleteOne({"id": req.params.id})
 		}
+		function getAnswers(){
+			return stackoverflowclone_db.collection("question_answers").findMany({"q_id": req.params.id}).toArray()
+		}
+		var answerArray = await Promise.all([getAnswers()]) //Answer array in [0]
+		answerArray = answerArray[0]
+		for(i = 0; i < answerArray; i++){
+			if(answerArray[i]["media"] && answerArray[i]["media"].length > 0){
+				params.concat(answerArray[i]["media"])
+			}
+		}
+		console.log(params)
 		if(params && params.length > 0){ //skip this if there isn't any media
+			console.log("DELETING FROM CASS CLUSTER")
 			cassandra_cluster.execute(query, [params], async function(err, result){
 				var ok = await Promise.all([deleteManyAnswers(req.params.id), deleteQuestion(req.params.id)])
 				res.status(200)
