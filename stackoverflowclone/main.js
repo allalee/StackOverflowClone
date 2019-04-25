@@ -295,7 +295,7 @@ app.get('/questions/:id', async function(req, res){
 		if(!view_tracker["ips"].includes(viewer_ip)){ //If the list doesn't include the ip
 			stackoverflowclone_db.collection("view_tracker").updateOne({"id": req.params.id}, {"$push": {"ips": viewer_ip}}) //Update the view tracker to have the ip
 			stackoverflowclone_db.collection("questions").updateOne({"id": req.params.id}, {"$set": {"view_count": found_question["view_count"] + 1}})//Increment the question's view count
-			res.json({"id": req.params.id, 
+			res.json({"status": "OK", "question": {"id": req.params.id, 
 				"user": {"username": user[0]["username"],
 				"reputation": user[0]["reputation"]}, 
 				"title": found_question["title"], 
@@ -306,10 +306,10 @@ app.get('/questions/:id', async function(req, res){
 				"timestamp": found_question["timestamp"],
 				"media": found_question["media"],
 				"tags": found_question["tags"],
-				"accepted_answer_id": found_question["accepted_answer_id"]})
+				"accepted_answer_id": found_question["accepted_answer_id"]}})
 			return
 		} else {
-			res.json({"id": req.params.id, 
+			res.json({"status": "OK", "question": {"id": req.params.id, 
 				"user": {"username": user[0]["username"],
 				"reputation": user[0]["reputation"]}, 
 				"title": found_question["title"], 
@@ -320,14 +320,14 @@ app.get('/questions/:id', async function(req, res){
 				"timestamp": found_question["timestamp"],
 				"media": found_question["media"],
 				"tags": found_question["tags"],
-				"accepted_answer_id": found_question["accepted_answer_id"]})
+				"accepted_answer_id": found_question["accepted_answer_id"]}})
 			return
 		}
 	} else {	//Logged in
 		if(!view_tracker["usernames"].includes(username)){ //If the list doesn't include the username
 			stackoverflowclone_db.collection("view_tracker").updateOne({"id": req.params.id}, {"$push": {"usernames": req.session.username}}) //Update the view tracker to have the name
 			stackoverflowclone_db.collection("questions").updateOne({"id": req.params.id}, {"$set": {"view_count": found_question["view_count"] + 1}})//Increment the questions collection's view count
-			res.json({"id": req.params.id, 
+			res.json({"status": "OK", "question": {"id": req.params.id, 
 				"user": {"username": user[0]["username"],
 				"reputation": user[0]["reputation"]}, 
 				"title": found_question["title"], 
@@ -338,10 +338,10 @@ app.get('/questions/:id', async function(req, res){
 				"timestamp": found_question["timestamp"],
 				"media": found_question["media"],
 				"tags": found_question["tags"],
-				"accepted_answer_id": found_question["accepted_answer_id"]})
+				"accepted_answer_id": found_question["accepted_answer_id"]}})
 			return
 		} else {
-			res.json({"id": req.params.id, 
+			res.json({"status": "OK", "question": {"id": req.params.id, 
 				"user": {"username": user[0]["username"],
 				"reputation": user[0]["reputation"]}, 
 				"title": found_question["title"], 
@@ -352,7 +352,7 @@ app.get('/questions/:id', async function(req, res){
 				"timestamp": found_question["timestamp"],
 				"media": found_question["media"],
 				"tags": found_question["tags"],
-				"accepted_answer_id": found_question["accepted_answer_id"]})
+				"accepted_answer_id": found_question["accepted_answer_id"]}})
 			return
 		}
 	}
