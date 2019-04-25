@@ -360,7 +360,7 @@ app.get('/questions/:id', async function(req, res){
 
 app.delete('/questions/:id', function(req, res){
 	stackoverflowclone_db = soc_db.db("StackOverflowClone")
-	stackoverflowclone_db.collection("questions").findOne({"id": req.params.id}, function(err, result){
+	stackoverflowclone_db.collection("questions").findOne({"id": req.params.id}, async function(err, result){
 		if(result == null){
 			res.status(400)
 			res.send("Question does not exist")
@@ -374,13 +374,25 @@ app.delete('/questions/:id', function(req, res){
 
 		var query = "DELETE FROM media WHERE file_id IN ?;"
 		var params = result["media"]
-		if(params != []){ //skip this if there isn't any media
-			cassandra_cluster.execute(query, [params])
+		function deleteManyAnswers(q_id){
+			return stackoverflowclone_db.collection("question_answers").deleteMany({"q_id": req.params.id})
 		}
-		stackoverflowclone_db.collection("question_answers").deleteMany({"q_id": req.params.id})
-		stackoverflowclone_db.collection("questions").deleteOne({"id": req.params.id})
-		res.status(200)
-		res.send("OK")
+		function deleteQuestion(id){
+			return stackoverflowclone_db.collection("questions").deleteOne({"id": req.params.id})
+		}
+		if(params != []){ //skip this if there isn't any media
+			cassandra_cluster.execute(query, [params], async function(err, result){
+				var ok = await Promise.all([deleteManyAnswers(req.params.id), deleteQuestion(req.params.id)])
+				res.status(200)
+				res.send("OK")
+				return
+			})
+		} else {
+			var ok = await Promise.all([deleteManyAnswers(req.params.id), deleteQuestion(req.params.id)])
+			res.status(200)
+			res.send("OK")
+			return
+		}
 	})
 })
 
