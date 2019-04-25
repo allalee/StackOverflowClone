@@ -380,7 +380,7 @@ app.delete('/questions/:id', function(req, res){
 		function deleteQuestion(id){
 			return stackoverflowclone_db.collection("questions").deleteOne({"id": req.params.id})
 		}
-		if(params != []){ //skip this if there isn't any media
+		if(params && params.length > 0){ //skip this if there isn't any media
 			cassandra_cluster.execute(query, [params], async function(err, result){
 				var ok = await Promise.all([deleteManyAnswers(req.params.id), deleteQuestion(req.params.id)])
 				res.status(200)
