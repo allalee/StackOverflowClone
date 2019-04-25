@@ -908,7 +908,7 @@ app.post('/answers/:id/accept', function(req, res){
 	})
 })
 
-app.post('/addmedia', upload.single('content'), function(req, res){
+app.post('/addmedia', upload.single('content'), async function(req, res){
 	if(req.session.username == null){
 		res.status(400).json({"status": "error", "id": "", "error": "User is not logged in!"})
 		return
@@ -918,11 +918,13 @@ app.post('/addmedia', upload.single('content'), function(req, res){
 	var file_id = uuidv4()
 	var query = `INSERT INTO media (file_id, ext, content, user) VALUES (?, ?, ?, ?);`
 	var params = [file_id, file_ext, uploaded_content, req.session.username]
+	redis_client.set(file_id, [file_ext, req.file.buffer], 'EX', 4)
 	cassandra_cluster.execute(query, params, function(err, result){
 		if(err){
 			console.log(err)
 			return
 		}
+		console.log(result)
 		res.json({"status": "OK", "id": file_id, "error": ""})
 		console.log(file_id + " has been uploaded into the database with ext: " + file_ext + ", user: " + req.session.username)
 	})
@@ -944,10 +946,24 @@ app.get('/media/:id', function(req, res){
 		}
 		console.log("Found result with row length: " + result.rowLength)
 		//console.log(result)
-		if(result.rowLength == 0){
+		if(result.rowLength == 0 && redis_client.get(req.params.id) == null){
 			res.status(400)
 			res.json({"status": "error", "error": "Image not found"})
 			return
+		} else if(result.rowLength == 0 && redis_client.get(req.params.id) != null){ //Get from redis
+			console.log("Getting image from cache...")
+			var img = redis_client.get(req.params.id)
+			header = img[0]
+			if(header == "jpg"){
+				res.header("Content-Type", "image/jpeg")
+			}
+			if(header == "gif"){
+				res.header("Content-Type", "image/gif")
+			}
+			if(header == "png"){
+				res.header("Content-Type", "image/png")
+			}
+			res.send(img[1])
 		} else {
 			console.log(result.rows[0].ext)
 			header = result.rows[0].ext
