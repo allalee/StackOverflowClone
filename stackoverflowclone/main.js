@@ -900,7 +900,7 @@ app.get('/media/:id', function(req, res){
 	var file_id = req.params.id
 	if(id == null){
 		res.status(400)
-		res.json("status": "error", "error": "id is null")
+		res.json({"status": "error", "error": "id is null"})
 		return
 	}
 	var query = `SELECT ext, content FROM media WHERE file_id=?;`
