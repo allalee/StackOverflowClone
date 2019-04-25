@@ -538,11 +538,19 @@ app.post('/search', function(req, res){
 	}
 	//timestamp, limit, sort_by, has_media, and accepted have default values
 	stackoverflowclone_db = soc_db.db("StackOverflowClone")
-	stackoverflowclone_db.collection("questions").find(question_query).sort({sort_by: -1}).limit(question_limit).toArray(function(err, result){
-		if(err) console.log(err)
-		res.json({"status": "OK", "questions": result, "error": ""})
-		return
-	})
+	if(sort_by == "timestamp"){
+		stackoverflowclone_db.collection("questions").find(question_query).sort({"timestamp": -1}).limit(question_limit).toArray(function(err, result){
+			if(err) console.log(err)
+			res.json({"status": "OK", "questions": result, "error": ""})
+			return
+		})
+	} else {
+		stackoverflowclone_db.collection("questions").find(question_query).sort({"score": -1}).limit(question_limit).toArray(function(err, result){
+			if(err) console.log(err)
+			res.json({"status": "OK", "questions": result, "error": ""})
+			return
+		})
+	}
 })
 
 app.get('/user/:username', function(req, res){
