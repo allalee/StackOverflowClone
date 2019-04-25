@@ -924,6 +924,7 @@ app.post('/addmedia', upload.single('content'), function(req, res){
 			return
 		}
 		res.json({"status": "OK", "id": file_id, "error": ""})
+		console.log(file_id + " has been uploaded into the database with ext: " + ext + ", user: " + req.session.username)
 	})
 })
 
@@ -936,11 +937,13 @@ app.get('/media/:id', function(req, res){
 	}
 	var query = `SELECT ext, content FROM media WHERE file_id=?;`
 	var params = [file_id]
+	console.log("Trying to find image with id: " + req.params.id)
 	cassandra_cluster.execute(query, params, function(err, result){
 		if(err){
 			console.log(err)
 		}
-		console.log(result)
+		console.log("Found result with row length: " + result.rowLength)
+		//console.log(result)
 		if(result.rowLength == 0){
 			res.status(400)
 			res.json({"status": "error", "error": "Image not found"})
