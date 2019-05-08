@@ -63,7 +63,7 @@ app.get('/', function(req, res) {
 })
 
 app.get('/adduser', function(req, res){
-	res.sendFile("/templates/adduser.html", {root: __dirname})
+	res.render("adduser")
 })
 
 app.post('/adduser', function(req, res){
@@ -100,7 +100,7 @@ app.post('/adduser', function(req, res){
 })
 
 app.get('/verify', function(req, res){
-	res.sendFile("/templates/verify.html", {root: __dirname})
+	res.render("verify")
 })
 
 app.post('/verify', function(req, res){
@@ -128,9 +128,9 @@ app.post('/verify', function(req, res){
 
 app.get('/login', function(req, res){
 	if(req.session.username == null){
-		res.sendFile("/templates/login.html", {root: __dirname})
+		res.render("login")
 	} else {
-		res.sendFile("/templates/logged_in.html", {root: __dirname})
+		res.render("logged_in")
 	}
 })
 
@@ -169,7 +169,7 @@ app.post('/logout', function(req, res){
 })
 
 app.get('/questions/add', function(err, res){
-	res.sendFile("/templates/add_question.html", {root: __dirname})
+	res.render("add_question")
 })
 
 app.post('/questions/add', async function(req, res){
@@ -408,7 +408,7 @@ app.delete('/questions/:id', function(req, res){
 })
 
 app.get('/questions/:id/answers/add', function(req, res){
-	res.sendFile("/templates/add_question_answer.html", {root: __dirname})
+	res.render("add_question_answer")
 })
 
 app.post('/questions/:id/answers/add', async function(req, res){
@@ -503,7 +503,7 @@ app.get('/questions/:id/answers', function(req,res){
 })
 
 app.get('/search', function(req, res){
-	res.sendFile("/templates/search_question.html", {root: __dirname})
+	res.render("search_question")
 })
 
 app.post('/search', function(req, res){
@@ -979,6 +979,10 @@ app.get('/media/:id', function(req, res){
 			res.send(result.rows[0].content)
 		}
 	})
+})
+
+app.get("/test", function(req, res){
+	res.render('test')
 })
 
 app.listen(port, function() {
