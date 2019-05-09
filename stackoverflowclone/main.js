@@ -907,6 +907,9 @@ app.post('/answers/:id/accept', function(req, res){
 		})
 	})
 })
+app.get('/addmedia', function(req, res){
+	res.render("addmedia")
+})
 
 app.post('/addmedia', upload.single('content'), async function(req, res){
 	if(req.session.username == null){
@@ -979,10 +982,6 @@ app.get('/media/:id', function(req, res){
 			res.send(result.rows[0].content)
 		}
 	})
-})
-
-app.get("/test", function(req, res){
-	res.render('test')
 })
 
 app.listen(port, function() {
