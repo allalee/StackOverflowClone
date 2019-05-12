@@ -136,11 +136,15 @@ app.get('/login', function(req, res){
 
 app.post('/login', function(req, res){
 	var request_body = req.body
+	if(!request_body.username){
+		res.status(400).json({"status": "error", "error": "Either null or undefined username"})
+	}
 	var username = request_body.username
 	var password = request_body.password
 	var stackoverflowclone_db = soc_db.db("StackOverflowClone")
 
 	stackoverflowclone_db.collection("user_accounts").findOne({"username": username}, function(err, result){
+		console.log(result)
 		if(result == null){
 			res.status(400).json({"status": "error", "error": "Username not found!"})
 			return
@@ -153,7 +157,7 @@ app.post('/login', function(req, res){
 			res.json({"status": "error", "error": "Invalid password for user!"})
 			return
 		}
-		req.session.username = username
+		req.session.username = result["username"]
 		res.json({"status": "OK", "error": ""})
 		return
 	})
