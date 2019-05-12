@@ -128,6 +128,7 @@ app.post('/verify', function(req, res){
 })
 
 app.get('/login', function(req, res){
+	console.log(req.session)
 	if(req.session.username == null){
 		res.render("login")
 	} else {
