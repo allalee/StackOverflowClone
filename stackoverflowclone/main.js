@@ -128,7 +128,6 @@ app.post('/verify', function(req, res){
 })
 
 app.get('/login', function(req, res){
-	console.log(req.session)
 	if(req.session.username == null){
 		res.render("login")
 	} else {
@@ -141,6 +140,7 @@ app.post('/login', function(req, res){
 	if(!request_body.username){
 		res.status(400).json({"status": "error", "error": "Either null or undefined username"})
 	}
+	console.log(req.session)
 	var username = request_body.username
 	var password = request_body.password
 	var stackoverflowclone_db = soc_db.db("StackOverflowClone")
