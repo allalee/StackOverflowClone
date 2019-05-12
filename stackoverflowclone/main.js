@@ -25,7 +25,8 @@ app.use(express.static(__dirname + "/static"))
 //Initiate the redis caching client
 var redis_client = redis.createClient({
 	port: 6379,
-	host: '64.52.162.255',
+	host: '45.77.159.248',
+	// host: '64.52.162.255',
 	password: "pJoWYJXxK2xJWptedPkx+q7cRdxpGyKRQld6W0+CUzjyBJKT2xrFeFoVC/xOnNQUz7dritTBe6ph34sw"
 })
 //Create a session for the app to use
