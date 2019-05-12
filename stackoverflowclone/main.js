@@ -59,7 +59,7 @@ mongo_client.connect(url, function(err, db){
 })
 
 app.get('/', function(req, res) {
-	res.send("Hello World")
+	res.render("home")
 })
 
 app.get('/adduser', function(req, res){
@@ -626,6 +626,10 @@ app.get('/user/:username/answers', function(req, res){
 			})
 		}
 	})
+})
+
+app.get('/user', function(req, res){
+	res.render("users")
 })
 //var [post, vote] = await Promise.all([ qa.retrieve(), upvote.retrieve() ])
 app.post('/questions/:id/upvote', async function(req, res){

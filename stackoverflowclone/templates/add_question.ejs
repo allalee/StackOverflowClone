@@ -1,5 +1,30 @@
 <html>
 	<link rel= "stylesheet" type= "text/css" href= "/css/add_question.css">
+	<table>
+		<tr>
+			<td>
+				<a href="adduser">Add User</a>
+			</td>
+			<td>
+				<a href="verify">Verify</a>
+			</td>
+			<td>
+				<a href="login">Login</a>
+			</td>
+			<td>
+				<a href="questions/add">Add Question</a>
+			</td>
+			<td>
+				<a href="questions/:id/answers/add">Add Answer</a>
+			</td>
+			<td>
+				<a href="search">Search</a>
+			</td>
+			<td>
+				<a href="user">Users</a>
+			</td>
+		</tr>
+	</table>
 	<div id = "header">
 		Ask a question<br>
 		Title<br>
@@ -8,6 +33,8 @@
 		<textarea class = "question_content" type = "text" name = "body" id = "body" rows = "10" cols = "100"></textarea><br>
 		Tags<br>
 		<input class = "question_bar" type = "text" name = "tags" id = "tags"><br>
+		Media<br>
+		<input class = "question_bar" type = "text" name = "media" id = "media"><br>
 		<button type="button" onclick="submit()">Add question!</button>
 	</div>	
 	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>

@@ -1,5 +1,4 @@
 <html>
-	<link rel= "stylesheet" type= "text/css" href= "/css/login.css">
 	<table>
 		<tr>
 			<td>
@@ -25,12 +24,17 @@
 			</td>
 		</tr>
 	</table>
-	<p>Login to your account</p>
+	Look up a user
 	<div>
-		Username:<input type="text" name="username", id="username"><br>
-		Password:<input type="text" name="key" id="password"><br>
-		<button type="button" onclick="login()">Login</button>
+		Username:<input type="text" name="username" id="username"><br>
+		<button type="button" onclick="submit(); getQ(); getA();">Submit</button>
+	</div>
+	<div id="userdata">
+	</div>
+	<div id="questions">
+	</div>
+	<div id="answers">
 	</div>
 	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
-	<script src="/js/login.js"></script>
+	<script src="/js/users.js"></script>
 </html>
