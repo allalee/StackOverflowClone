@@ -35,7 +35,7 @@ app.use(session({
 	saveUninitialized: false,
 	resave: false,
 	cookie: {maxAge: 365*24*60*60*1000},
-	store: new redisStore({host: "45.77.159.248", port: 6379, client: redis_client})
+	store: new redisStore({client: redis_client})
 }))
 app.use(request_ip.mw())
 //Tell the application to use ejs for html styling
