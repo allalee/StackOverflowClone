@@ -952,6 +952,8 @@ app.get('/addmedia', function(req, res){
 })
 
 app.post('/addmedia', upload.single('content'), async function(req, res){
+	console.log("This is the url: " + req.url + "------------ This is the session: ")
+	console.log(req.session)
 	if(!req.session || req.session.username == null){
 		res.status(400).json({"status": "error", "id": "", "error": "User is not logged in!"})
 		return
