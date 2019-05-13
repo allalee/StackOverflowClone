@@ -137,17 +137,17 @@ app.get('/login', function(req, res){
 })
 
 app.post('/login', function(req, res){
+	console.log(req)
 	var request_body = req.body
 	if(!request_body.username){
 		res.status(400).json({"status": "error", "error": "Either null or undefined username"})
 	}
-	console.log(req.session)
+	console.log("The session is: " + req.session)
 	var username = request_body.username
 	var password = request_body.password
 	var stackoverflowclone_db = soc_db.db("StackOverflowClone")
 
 	stackoverflowclone_db.collection("user_accounts").findOne({"username": username}, function(err, result){
-		console.log(result)
 		if(result == null){
 			res.status(400).json({"status": "error", "error": "Username not found!"})
 			return
@@ -180,6 +180,7 @@ app.get('/questions/add', function(err, res){
 })
 
 app.post('/questions/add', async function(req, res){
+	console.log(req)
 	if(req.session.username == null){
 		res.status(400).send({"status": "error", "error": "User is not logged in!"})
 		return
@@ -274,6 +275,7 @@ app.post('/questions/add', async function(req, res){
 })
 
 app.get('/questions/:id', async function(req, res){
+	console.log(req)
 	// console.log(req.method)
 	// console.log(req.url)
 	// console.log(req.body)
