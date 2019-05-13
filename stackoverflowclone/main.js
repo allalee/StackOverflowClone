@@ -129,7 +129,7 @@ app.post('/verify', function(req, res){
 })
 
 app.get('/login', function(req, res){
-	if(req.session.username == null){
+	if(!req.session || req.session.username == null){
 		res.render("login")
 	} else {
 		res.render("logged_in")
@@ -140,6 +140,10 @@ app.post('/login', function(req, res){
 	console.log("This is the url: " + req.url + "------------ This is the session: ")
 	console.log(req.session)
 	var request_body = req.body
+	if(!req.session){
+		console.log("No session data available at /login")
+		res.status(400).json({"status": "error", "error": "No session data available"})
+	}
 	if(!request_body.username){
 		res.status(400).json({"status": "error", "error": "Either null or undefined username"})
 	}
@@ -167,7 +171,7 @@ app.post('/login', function(req, res){
 })
 
 app.post('/logout', function(req, res){
-	if(req.session.username == null){
+	if(!req.session || req.session.username == null){
 		res.status(400).json({"status": "error", "error": "User is not logged in!"})
 	} else {
 		req.session.destroy()
@@ -182,7 +186,7 @@ app.get('/questions/add', function(err, res){
 app.post('/questions/add', async function(req, res){
 	console.log("This is the url: " + req.url + "------------ This is the session: ")
 	console.log(req.session)
-	if(req.session.username == null){
+	if(!req.session || req.session.username == null){
 		res.status(400).send({"status": "error", "error": "User is not logged in!"})
 		return
 	}
@@ -282,7 +286,12 @@ app.get('/questions/:id', async function(req, res){
 	// console.log(req.url)
 	// console.log(req.body)
 	stackoverflowclone_db = soc_db.db("StackOverflowClone")
-	var username = req.session.username //If it is null then user is not logged in, if not then they are logged in
+	var username = //If it is null then user is not logged in, if not then they are logged in
+	if(!req.session || req.session.username == null){
+		username = null
+	} else {
+		username = req.session.username
+	}
 	function getInitialQuestion(id){
 		return stackoverflowclone_db.collection("questions").findOne({"id": id}, {projection: {_id: 0}})
 	}
@@ -371,6 +380,10 @@ app.get('/questions/:id', async function(req, res){
 
 app.delete('/questions/:id', function(req, res){
 	stackoverflowclone_db = soc_db.db("StackOverflowClone")
+	if(!req.session){
+		res.status(400)
+		res.send({"status": "error", "error": "No session data available"})
+	}
 	stackoverflowclone_db.collection("questions").findOne({"id": req.params.id}, async function(err, result){
 		if(result == null){
 			res.status(400)
@@ -424,7 +437,7 @@ app.get('/questions/:id/answers/add', function(req, res){
 
 app.post('/questions/:id/answers/add', async function(req, res){
 	stackoverflowclone_db = soc_db.db("StackOverflowClone")
-	if(req.session.username == null){
+	if(!req.session || req.session.username == null){
 		res.status(400).json({"status": "error", "id": "", "error": "User is not logged in!"})
 		return
 	}
@@ -645,6 +658,10 @@ app.get('/user', function(req, res){
 //var [post, vote] = await Promise.all([ qa.retrieve(), upvote.retrieve() ])
 app.post('/questions/:id/upvote', async function(req, res){
 	stackoverflowclone_db = soc_db.db("StackOverflowClone")
+	if(!req.session || req.session.uesrname == null){
+		res.status(400)
+		res.json("status": "error", "error": "User is not logged in!")
+	}
 	var upvote_option
 	function retrieve_question(){
 		return stackoverflowclone_db.collection("questions").findOne({"id": req.params.id})
@@ -776,6 +793,10 @@ app.post('/questions/:id/upvote', async function(req, res){
 
 app.post('/answers/:id/upvote', async function(req, res){
 	stackoverflowclone_db = soc_db.db("StackOverflowClone")
+	if(!req.session || req.session.username == null){
+		res.status(400)
+		res.json({"status": "error", "error": "User is not logged in!"})
+	}
 	var upvote_option
 	function retrieve_answer(){
 		return stackoverflowclone_db.collection("question_answers").findOne({"id": req.params.id})
@@ -899,6 +920,10 @@ app.post('/answers/:id/upvote', async function(req, res){
 
 app.post('/answers/:id/accept', function(req, res){
 	stackoverflowclone_db = soc_db.db("StackOverflowClone")
+	if(!req.session || req.session.username){
+		res.status(400)
+		res.json({"status": "error", "error": "User is not logged in!"})
+	}
 	stackoverflowclone_db.collection("question_answers").findOne({"id": req.params.id}, function(err, a_result){
 		if(err) throw err;
 		if(a_result == null){
@@ -927,7 +952,7 @@ app.get('/addmedia', function(req, res){
 })
 
 app.post('/addmedia', upload.single('content'), async function(req, res){
-	if(req.session.username == null){
+	if(!req.session || req.session.username == null){
 		res.status(400).json({"status": "error", "id": "", "error": "User is not logged in!"})
 		return
 	}
