@@ -137,7 +137,8 @@ app.get('/login', function(req, res){
 })
 
 app.post('/login', function(req, res){
-	console.log("This is the url: " + req.url + "------------ This is the session: " + req.session)
+	console.log("This is the url: " + req.url + "------------ This is the session: ")
+	console.log(req.session)
 	var request_body = req.body
 	if(!request_body.username){
 		res.status(400).json({"status": "error", "error": "Either null or undefined username"})
@@ -179,7 +180,8 @@ app.get('/questions/add', function(err, res){
 })
 
 app.post('/questions/add', async function(req, res){
-	console.log("This is the url: " + req.url + "------------ This is the session: " + req.session)
+	console.log("This is the url: " + req.url + "------------ This is the session: ")
+	console.log(req.session)
 	if(req.session.username == null){
 		res.status(400).send({"status": "error", "error": "User is not logged in!"})
 		return
@@ -274,7 +276,8 @@ app.post('/questions/add', async function(req, res){
 })
 
 app.get('/questions/:id', async function(req, res){
-	console.log("This is the url: " + req.url + "------------ This is the session: " + req.session)
+	console.log("This is the url: " + req.url + "------------ This is the session: ")
+	console.log(req.session)
 	// console.log(req.method)
 	// console.log(req.url)
 	// console.log(req.body)
