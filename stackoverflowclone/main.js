@@ -286,7 +286,7 @@ app.get('/questions/:id', async function(req, res){
 	// console.log(req.url)
 	// console.log(req.body)
 	stackoverflowclone_db = soc_db.db("StackOverflowClone")
-	var username = //If it is null then user is not logged in, if not then they are logged in
+	var username//If it is null then user is not logged in, if not then they are logged in
 	if(!req.session || req.session.username == null){
 		username = null
 	} else {
@@ -660,7 +660,7 @@ app.post('/questions/:id/upvote', async function(req, res){
 	stackoverflowclone_db = soc_db.db("StackOverflowClone")
 	if(!req.session || req.session.uesrname == null){
 		res.status(400)
-		res.json("status": "error", "error": "User is not logged in!")
+		res.json({"status": "error", "error": "User is not logged in!"})
 	}
 	var upvote_option
 	function retrieve_question(){
