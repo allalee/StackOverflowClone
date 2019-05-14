@@ -1008,7 +1008,7 @@ app.get('/media/:id', function(req, res){
 			if(header == "png"){
 				res.header("Content-Type", "image/png")
 			}
-			res.send(img[1])
+			res.end(img[1])
 		} else {
 			console.log(result.rows[0].ext)
 			header = result.rows[0].ext
@@ -1021,7 +1021,7 @@ app.get('/media/:id', function(req, res){
 			if(header == "png"){
 				res.header("Content-Type", "image/png")
 			}
-			res.send(result.rows[0].content)
+			res.end(result.rows[0].content)
 		}
 	})
 })
